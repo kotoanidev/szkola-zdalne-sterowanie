@@ -222,9 +222,19 @@ static void report_led(int force)
     emit("{\"ev\":\"led\",\"t\":%.3f,\"duty\":%.4f}", sim_time(), duty);
 }
 
+// Przycisk to zewnętrzne wymuszenie stanu pinu; samo podniesienie IRQ nadpisałby pull-up
+// przy każdym zapisie PORTD (dioda statusu jest zapisywana co 1 ms)
+static void drive_button(int pressed)
+{
+    avr_ioport_external_t ext = { .name = 'D', .mask = 1 << 2, .value = pressed ? 0 : 1 << 2 };
+
+    avr_ioctl(avr, AVR_IOCTL_IOPORT_SET_EXTERNAL('D'), &ext);
+    avr_raise_irq(button_irq, pressed ? 0 : 1);
+}
+
 static void set_button(int pressed)
 {
-    avr_raise_irq(button_irq, pressed ? 0 : 1);
+    drive_button(pressed);
     emit("{\"ev\":\"btn\",\"t\":%.3f,\"pressed\":%d}", sim_time(), pressed);
 }
 
@@ -251,8 +261,8 @@ static uint32_t raw_to_mv(long raw)
         raw = 0;
     if (raw > 1023)
         raw = 1023;
-    // Środek przedziału kwantyzacji, żeby ADC zwrócił dokładnie tę wartość
-    return (uint32_t)(((double)raw + 0.5) * VREF_MV / 1024.0);
+    // ADC w simavr liczy mV * 1023 / VREF; środek przedziału daje dokładnie tę wartość
+    return (uint32_t)(((double)raw + 0.5) * VREF_MV / 1023.0);
 }
 
 static uint32_t temp_to_mv(double c)
@@ -269,7 +279,7 @@ static void apply_inputs(void)
 {
     int ch;
 
-    avr_raise_irq(button_irq, 1);
+    drive_button(0);
     for (ch = 0; ch < 3; ch++)
         avr_raise_irq(adc_irq[ch], adc_mv[ch]);
 }

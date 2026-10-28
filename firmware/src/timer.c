@@ -13,8 +13,8 @@ ISR(TIMER2_COMP_vect)
 
 void timer_init(void)
 {
-    OCR2 = (uint8_t)(F_CPU / 8 / 1000 - 1);
     TCCR2 = _BV(WGM21) | _BV(CS21);
+    OCR2 = (uint8_t)(F_CPU / 8 / 1000 - 1);
     TIMSK |= _BV(OCIE2);
 }
 

@@ -52,6 +52,7 @@ class AvrSim:
         if not self._ready.wait(5):
             self.close()
             raise AvrSimError("avrsim nie wystartował")
+        self.set_inputs(self.pot, self.ldr, self.temp_c)
 
     # --- zdarzenia z symulatora --------------------------------------------------
 
