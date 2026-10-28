@@ -1,0 +1,39 @@
+# Firmware (avr-gcc)
+firmware/build/
+*.o
+*.d
+*.elf
+*.hex
+*.eep
+*.lss
+*.map
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Lokalna konfiguracja i sekrety
+.env
+.env.*
+*.local.*
+.claude/settings.local.json
+
+# Materialy prowadzacego - tylko lokalnie (prawa autorskie, nie publikujemy)
+docs/materialy/
+
+# Office / system
+~$*
+*.tmp
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Edytory
+.vscode/*
+!.vscode/extensions.json
+.idea/
