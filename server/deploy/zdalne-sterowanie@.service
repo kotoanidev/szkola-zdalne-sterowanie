@@ -1,0 +1,25 @@
+# Autostart serwera na Raspberry Pi (R10). %i = użytkownik, w którego katalogu domowym
+# jest repozytorium. Instalacja (README, „Serwer na Raspberry Pi”):
+#   sudo cp deploy/zdalne-sterowanie@.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now zdalne-sterowanie@$USER
+# Zmienne (SERIAL_PORT, PORT, POLL_INTERVAL) można ustawić w /etc/default/zdalne-sterowanie.
+
+[Unit]
+Description=Zdalne sterowanie LED - serwer Flask
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+SupplementaryGroups=dialout
+WorkingDirectory=/home/%i/szkola-zdalne-sterowanie/server
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/etc/default/zdalne-sterowanie
+ExecStart=/home/%i/szkola-zdalne-sterowanie/server/.venv/bin/python -m app
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

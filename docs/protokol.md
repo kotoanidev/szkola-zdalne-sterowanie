@@ -1,6 +1,6 @@
 # Protokół UART i API HTTP
 
-> **Status:** wersja 0.9 – zaimplementowana w firmware 0.9.0, czeka na test na sprzęcie. API HTTP finalizujemy w etapie 3.
+> **Status:** wersja 0.9 – zaimplementowana w firmware 0.9.0 i serwerze, sprawdzona w symulatorze simavr; czeka na test na sprzęcie.
 > Ten plik jest jedynym źródłem prawdy: każda zmiana oznacza aktualizację firmware, serwera i testów w tym samym commicie.
 
 ## 1. Warstwa fizyczna UART
@@ -75,10 +75,12 @@ Zasady: serwer wysyła jedną komendę naraz i czeka na odpowiedź (limit 500 ms
 |---|---|---|
 | GET | `/` | interfejs WWW |
 | GET | `/on`, `/off` | zgodność z instrukcją (etap 3); zwraca stan w JSON |
-| GET | `/api/state` | stan i pomiary |
-| POST | `/api/state` | zmiana stanu, np. `{"on": true, "pwm": 60, "mode": "AUTO"}` (pola opcjonalne) |
-| GET | `/api/events` | strumień Server-Sent Events ze zmianami stanu |
+| GET | `/api/state` | stan i pomiary z ostatniego odczytu; `?refresh=1` – odczyt od razu (`GET` do MCU) |
+| POST | `/api/state` | zmiana stanu, np. `{"on": true, "pwm": 60, "mode": "AUTO", "tlim": 45}` (pola opcjonalne, wykonywane w kolejności on, pwm, mode, tlim) |
+| GET | `/api/events` | strumień Server-Sent Events |
 | GET | `/api/health` | stan serwera i połączenia z mikrokontrolerem |
+| GET | `/api/log` | ostatnie 50 wpisów dziennika (zdarzenia MCU, komendy ze strony, połączenia) |
+| GET / POST | `/api/sim` | tylko w trybie symulacji: wirtualny sprzęt, np. `{"pot": 800, "ldr": 300, "temp": 31.5, "button": "short"\|"long", "reset": true\|"power"}` |
 
 Przykładowa odpowiedź `GET /api/state`:
 
@@ -91,8 +93,37 @@ Przykładowa odpowiedź `GET /api/state`:
   "pot": 512,
   "ldr": 301,
   "temp": 23.5,
+  "alarm": false,
+  "tlim": 50,
   "uptime_s": 1234
 }
 ```
 
-Błędy zwracamy jako JSON `{"error": "..."}` z kodem HTTP 400 (zły argument) lub 503 (brak połączenia z mikrokontrolerem).
+Przykładowa odpowiedź `GET /api/health`:
+
+```json
+{
+  "ok": true,
+  "connected": true,
+  "simulated": false,
+  "simulator": null,
+  "port": "/dev/ttyUSB0",
+  "firmware": "0.9.0",
+  "server_uptime_s": 3600
+}
+```
+
+Zdarzenia SSE (`/api/events`):
+
+| Zdarzenie | Dane |
+|---|---|
+| `init` | zaraz po połączeniu: `state`, `log`, `simulated`, `simulator`, `firmware`, `sim` |
+| `state` | pełny stan po każdej zmianie (jak `GET /api/state`) |
+| `log` | nowy wpis dziennika: `{"t": czas_unix, "text": "EVT BTN on=1", "source": "mcu"\|"web"\|"server"}` |
+| `sim` | tylko simavr: dioda z emulowanego układu `{"led": %, "duty": wypełnienie 0–1, "status": true\|false, ...}` |
+
+Co 15 s serwer wysyła komentarz podtrzymujący połączenie.
+
+Błędy zwracamy jako JSON `{"error": "..."}` z kodem HTTP 400 (zły argument), 502 (mikrokontroler odpowiedział `ERR`), 503 (brak połączenia lub odpowiedzi mikrokontrolera) albo 404 (`/api/sim` poza trybem symulacji).
+
+Serwer wysyła do mikrokontrolera jedną komendę naraz i przyjmuje tylko pasującą odpowiedź (`PING` → `PONG`, `VER` → `VER`, `GET` → `STATE`, pozostałe → `OK`, zawsze także `ERR`); inne linie, np. urwane po otwarciu portu, pomija. Po połączeniu wysyła `PING`, `VER` i `GET`, a potem odczytuje stan co `POLL_INTERVAL` sekund oraz od razu po każdym zdarzeniu `EVT`.
