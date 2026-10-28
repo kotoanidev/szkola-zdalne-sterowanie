@@ -1,7 +1,7 @@
 # Sprzęt, połączenia i wyprowadzenia
 
 > **Status:** projekt w wersji roboczej, do potwierdzenia przy montażu w etapie 1.
-> Każda zmiana przypisania pinów wymaga aktualizacji tego pliku **i** `firmware/include/pinout.h` (powstanie w etapie 1) w tym samym commicie.
+> Każda zmiana przypisania pinów wymaga aktualizacji tego pliku **i** `firmware/include/pinout.h` w tym samym commicie.
 
 ## 1. Lista elementów
 
@@ -16,8 +16,8 @@
 | Dioda LED (status) + rezystor 330 Ω | 1 | sygnalizacja pracy / komunikacji |
 | Przycisk (tact switch) | 1 | do GND, wewnętrzny pull-up |
 | Potencjometr 10 kΩ | 1 | lokalna regulacja jasności (ADC0) |
-| Fotorezystor + rezystor 10 kΩ | 1 | dzielnik napięcia, tryb AUTO (ADC1) |
-| Czujnik temperatury | 1 | typ **do ustalenia**: LM35 / NTC 10 kΩ + 10 kΩ / DS18B20 + 4,7 kΩ |
+| Fotorezystor + rezystor 10 kΩ | 1 | tryb AUTO (ADC1): fotorezystor od +5 V do ADC1, 10 kΩ od ADC1 do GND (więcej światła = wyższe napięcie); połączenie odwrotne – `LDR_INVERT 1` w `config.h` |
+| Czujnik temperatury | 1 | typ **do ustalenia**: LM35 (wyjście na ADC2) albo NTC 10 kΩ od +5 V do ADC2 i 10 kΩ od ADC2 do GND; wybór stałą `TEMP_SENSOR` w `firmware/include/config.h` (domyślnie LM35) |
 | Kondensatory 100 nF | 3 | VCC–GND, AVCC–GND, AREF–GND |
 | Rezystor 10 kΩ | 1 | RESET → VCC |
 | Multimetr | 1 | pomiary w etapie 4 |

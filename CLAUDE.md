@@ -66,7 +66,7 @@ Serwer (`server/`, Python):
 - Python 3.11+, Flask i pyserial; na Raspberry Pi tylko w venv (bez `sudo pip`),
 - port szeregowy obsługuje jeden obiekt z blokadą; Flask korzysta wyłącznie z niego,
 - konfiguracja przez zmienne środowiskowe, bez wpisanych na sztywno portów i adresów,
-- tryb symulacji musi działać bez sprzętu (Windows i Linux),
+- tryb symulacji musi działać bez sprzętu (Windows i Linux): `SIMULATE=1` – model w Pythonie (`app/mcu_sim.py`, zachowuje się jak firmware), `SIMULATE=avr` – prawdziwy firmware w simavr (tylko Linux, `sim/`); zmiana logiki firmware = zmiana `mcu_sim.py`,
 - testy `pytest` muszą przechodzić przed commitem dotyczącym serwera,
 - wersje zależności przypinamy po pierwszym uruchomieniu na Raspberry Pi (etap 3).
 
@@ -100,6 +100,15 @@ make flash       # wgranie przez USBasp
 make check       # test programatora (sygnatura)
 make read-fuses  # odczyt fusebitów (tylko odczyt)
 make toolchain   # który avr-gcc / avrdude jest używany
+make demo        # program demonstracyjny etapu 1 (make flash-demo – wgranie)
+
+cd server
+.venv/bin/python -m pytest          # testy (firmware w simavr tylko po make -C sim)
+SIMULATE=1 .venv/bin/python -m app  # serwer z symulatorem, http://localhost:5000
+SIMULATE=avr .venv/bin/python -m app
+
+make -C sim       # tylko Linux: simavr + sim/build/avrsim (raz)
+make -C sim test  # testy prawdziwego firmware w simavr
 
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\md2docx.ps1 docs\sprawozdania\etap1.md
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\github-tymczasowo.ps1 -Akcja Zaloguj

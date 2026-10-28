@@ -8,6 +8,10 @@ firmware/build/
 *.lss
 *.map
 
+# Symulator simavr (zależności i kompilacja tylko lokalnie)
+sim/.deps/
+sim/build/
+
 # Python
 __pycache__/
 *.py[cod]
