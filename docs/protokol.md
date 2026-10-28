@@ -1,6 +1,6 @@
 # Protokół UART i API HTTP
 
-> **Status:** wersja robocza 0.1. Protokół UART finalizujemy w etapie 2, a API HTTP w etapie 3.
+> **Status:** wersja 0.9 – zaimplementowana w firmware 0.9.0, czeka na test na sprzęcie. API HTTP finalizujemy w etapie 3.
 > Ten plik jest jedynym źródłem prawdy: każda zmiana oznacza aktualizację firmware, serwera i testów w tym samym commicie.
 
 ## 1. Warstwa fizyczna UART
@@ -11,7 +11,7 @@
 | Format | 8N1, bez kontroli przepływu |
 | Konfiguracja ATmega8 | U2X = 1, UBRR = 12 (F_CPU 1 MHz → 9615 bps, błąd +0,16 %) |
 | Kodowanie | ASCII |
-| Koniec linii | `\n` (znak `\r` jest ignorowany) |
+| Koniec linii | do MCU: `\n` (znak `\r` jest ignorowany); z MCU: `\r\n` (czytelne w każdym terminalu) |
 
 ## 2. Tryb zgodności z instrukcją (etap 2)
 
@@ -24,18 +24,36 @@ Gdy bufor linii jest pusty, pojedynczy znak działa od razu, bez Entera. Dzięki
 
 ## 3. Komendy tekstowe (rozszerzenie)
 
-Komenda to jedna linia o długości do 32 znaków, wielkość liter nie ma znaczenia. Każda komenda dostaje **dokładnie jedną** linię odpowiedzi: `OK ...`, `PONG`, `VER ...`, `STATE ...` albo `ERR <kod>`.
+Komenda to jedna linia o długości do 32 znaków, wielkość liter nie ma znaczenia, a nadmiarowe spacje na początku i końcu są pomijane. Każda komenda dostaje **dokładnie jedną** linię odpowiedzi: `OK ...`, `PONG`, `VER ...`, `STATE ...` albo `ERR <kod>`.
 
 | Komenda | Opis | Odpowiedź (przykład) |
 |---|---|---|
 | `PING` | test łącza | `PONG` |
-| `VER` | wersja firmware | `VER 0.1.0` |
+| `VER` | wersja firmware | `VER 0.9.0` |
 | `ON` / `OFF` / `TOGGLE` | stan wyjścia | `OK on=1` |
-| `PWM <0-100>` | jasność w % | `OK pwm=60` |
+| `PWM <0-100>` | jasność w %; w trybie AUTO przełącza na MANUAL | `OK pwm=60` lub `OK pwm=60 mode=MANUAL` |
 | `MODE MANUAL` / `MODE AUTO` | tryb (AUTO = jasność wg fotorezystora) | `OK mode=AUTO` |
-| `GET` | pełny stan i pomiary | `STATE on=1 pwm=60 mode=MANUAL pot=512 ldr=301 temp=23.5 up=1234` |
+| `TLIM <0-125>` | próg alarmu temperatury w °C | `OK tlim=30` |
+| `GET` | pełny stan i pomiary | `STATE on=1 pwm=60 mode=MANUAL pot=512 ldr=301 temp=23.5 alarm=0 tlim=50 up=1234` |
 
-Kody błędów: `ERR UNKNOWN` (nieznana komenda), `ERR ARG` (zły argument), `ERR TOOLONG` (za długa linia).
+Kody błędów: `ERR UNKNOWN` (nieznana komenda), `ERR ARG` (zły, brakujący lub nadmiarowy argument), `ERR TOOLONG` (linia dłuższa niż 32 znaki).
+
+Odpowiedzi `OK`, `STATE` i zdarzenia `EVT` mają postać `klucz=wartość` oddzielonych spacjami, więc serwer może je czytać jednym parserem.
+
+### Pola stanu
+
+| Pole | Znaczenie |
+|---|---|
+| `on` | wyjście włączone (1) / wyłączone (0) |
+| `pwm` | jasność 0–100 %; w trybie AUTO wyliczona z fotorezystora |
+| `mode` | `MANUAL` albo `AUTO` |
+| `pot`, `ldr` | surowy odczyt ADC0 i ADC1 (0–1023, średnia z 16 próbek) |
+| `temp` | temperatura w °C z jedną cyfrą po przecinku (typ czujnika w `firmware/include/config.h`) |
+| `alarm` | 1 – temperatura ≥ `tlim`; gaśnie po spadku o 2 °C poniżej progu |
+| `tlim` | próg alarmu w °C |
+| `up` | czas pracy od resetu w sekundach |
+
+Jasność `pwm` to jasność odczuwana: wypełnienie PWM = (pwm/100)², np. `pwm=50` daje 25 % wypełnienia (korekcja gamma). Zmiany jasności i włączanie/wyłączanie są płynne (ok. 0,5 s). Stan `on`, `pwm` (tylko z trybu MANUAL), `mode` i `tlim` jest zapisywany w EEPROM 2 s po ostatniej zmianie i przywracany po restarcie.
 
 ## 4. Zdarzenia asynchroniczne (MCU → serwer)
 
@@ -43,12 +61,13 @@ Mikrokontroler sam wysyła linię zaczynającą się od `EVT`, gdy stan zmieni s
 
 | Zdarzenie | Kiedy |
 |---|---|
-| `EVT BOOT reset=POR\|EXT\|WDT\|BOR` | start po resecie (z przyczyną) |
-| `EVT BTN on=0` | przełączenie przyciskiem |
-| `EVT POT pwm=40` | zmiana jasności potencjometrem |
-| `EVT TEMP alarm=1 temp=51.0` | przekroczenie progu temperatury |
+| `EVT BOOT reset=POR\|EXT\|WDT\|BOR ver=0.9.0` | start po resecie (z przyczyną i wersją firmware) |
+| `EVT BTN on=0` | krótkie naciśnięcie przycisku – przełączenie wyjścia |
+| `EVT BTN mode=AUTO` | przytrzymanie przycisku ≥ 1 s – zmiana trybu |
+| `EVT POT pwm=40` | zmiana jasności potencjometrem (o ≥ 2 %); w trybie AUTO dodatkowo ` mode=MANUAL` |
+| `EVT TEMP alarm=1 temp=51.0` | włączenie lub wyłączenie alarmu temperatury |
 
-Zasady: serwer wysyła jedną komendę naraz i czeka na odpowiedź (limit 500 ms). Linie `EVT` mogą przyjść w dowolnej chwili i nie są odpowiedzią na komendę.
+Zasady: serwer wysyła jedną komendę naraz i czeka na odpowiedź (limit 500 ms). Linie `EVT` mogą przyjść w dowolnej chwili i nie są odpowiedzią na komendę. Pomiary (`pot`, `ldr`, `temp`) i jasność w trybie AUTO serwer odczytuje okresowo komendą `GET`.
 
 ## 5. API HTTP serwera (Raspberry Pi, port 5000)
 

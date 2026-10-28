@@ -2,6 +2,8 @@
 #
 #   make             kompilacja -> build/firmware.hex
 #   make flash       wgranie do ATmega8 przez USBasp
+#   make demo        program demonstracyjny etapu 1 -> build/demo.hex
+#   make flash-demo  wgranie programu demonstracyjnego
 #   make check       test polaczenia z programatorem (odczyt sygnatury)
 #   make read-fuses  odczyt fusebitow (TYLKO odczyt)
 #   make toolchain   pokazuje, ktory kompilator i avrdude sa uzywane
@@ -46,7 +48,10 @@ $(BUILD)/%.o: src/%.c | $(BUILD)
 $(BUILD)/$(TARGET).elf: $(OBJ)
 	$(CC) $(LDFLAGS) $^ -o $@
 
-$(BUILD)/$(TARGET).hex: $(BUILD)/$(TARGET).elf
+$(BUILD)/demo.elf: demo/etap1.c | $(BUILD)
+	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
+
+$(BUILD)/%.hex: $(BUILD)/%.elf
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
 $(BUILD):
@@ -56,6 +61,12 @@ size: $(BUILD)/$(TARGET).elf
 	$(SIZE) --mcu=$(MCU) -C $<
 
 flash: $(BUILD)/$(TARGET).hex
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U flash:w:$<:i
+
+demo: $(BUILD)/demo.hex
+	$(SIZE) --mcu=$(MCU) -C $(BUILD)/demo.elf
+
+flash-demo: $(BUILD)/demo.hex
 	$(AVRDUDE) $(AVRDUDE_FLAGS) -U flash:w:$<:i
 
 check:
@@ -72,6 +83,6 @@ toolchain:
 clean:
 	rm -rf $(BUILD)
 
--include $(OBJ:.o=.d)
+-include $(OBJ:.o=.d) $(BUILD)/demo.d
 
-.PHONY: all size flash check read-fuses toolchain clean
+.PHONY: all size flash demo flash-demo check read-fuses toolchain clean
