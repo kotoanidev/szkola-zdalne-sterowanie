@@ -166,6 +166,7 @@ Pełna specyfikacja: **[docs/protokol.md](docs/protokol.md)**.
 │   ├── avrsim.c               firmware.hex + UART na pseudoterminalu + wirtualne czujniki
 │   └── Makefile               pobiera simavr, buduje avrsim, make run / make test
 ├── docs/
+│   ├── WNIOSEK.md             wniosek o realizację projektu (przed rozpoczęciem prac)
 │   ├── PLAN_PROJEKTU.md/.docx plan, harmonogram, ryzyka
 │   ├── sprzet.md              elementy, piny, zasilanie
 │   ├── protokol.md            protokół UART i API HTTP
@@ -310,6 +311,7 @@ Wyniki trafiają do sprawozdań i dokumentacji technicznej wyłącznie z rzeczyw
 
 | Dokument | Opis |
 |---|---|
+| [docs/WNIOSEK.md](docs/WNIOSEK.md) | wniosek o realizację projektu: temat, terminy, języki, narzędzia, sprzęt (`.docx` przez `md2docx.ps1`) |
 | [docs/PLAN_PROJEKTU.md](docs/PLAN_PROJEKTU.md) | plan, harmonogram, rozszerzenia, ryzyka (`.docx` do oddania) |
 | [docs/sprzet.md](docs/sprzet.md) | sprzęt, połączenia, piny |
 | [docs/protokol.md](docs/protokol.md) | protokół UART, API HTTP |
