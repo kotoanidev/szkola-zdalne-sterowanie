@@ -51,6 +51,7 @@ static const char *link_path;
 static const char *eeprom_path;
 static int sensor_ntc;
 static double speed = 1.0;
+static uint64_t t0;
 static volatile sig_atomic_t stop_requested;
 
 static int uart_xon;
@@ -287,6 +288,8 @@ static void apply_inputs(void)
 static void do_reset(int bit, const char *reason)
 {
     avr_reset(avr);
+    // avr_reset() zeruje licznik cykli, więc czas rzeczywisty liczymy od nowa
+    t0 = now_ns();
     avr->data[REG_MCUCSR] |= (uint8_t)(1 << bit);
     apply_inputs();
     emit("{\"ev\":\"reset\",\"t\":%.3f,\"reason\":\"%s\"}", sim_time(), reason);
@@ -404,7 +407,6 @@ int main(int argc, char *argv[])
 {
     elf_firmware_t fw;
     const char *hex = NULL;
-    uint64_t t0;
     int i, status = 0;
 
     for (i = 1; i < argc; i++) {

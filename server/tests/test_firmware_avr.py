@@ -145,6 +145,7 @@ def test_button_short_and_long(link, avr):
 
 
 def test_potentiometer_event(link, avr):
+    time.sleep(0.2)  # pierwszy odczyt po starcie to punkt odniesienia, nie zmiana
     avr.set_inputs(pot=1023)
     assert link.wait_event("EVT POT") == "EVT POT pwm=100"
 
