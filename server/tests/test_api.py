@@ -1,6 +1,8 @@
 import json
 import time
 
+from app.protocol import parse_line
+
 
 def wait_for(predicate, timeout=2.0):
     deadline = time.monotonic() + timeout
@@ -97,3 +99,21 @@ def test_offline_returns_503(offline_client):
     assert r.status_code == 200 and r.json["connected"] is False
     assert offline_client.get("/api/health").json["connected"] is False
     assert offline_client.get("/api/sim").status_code == 404
+
+
+def test_stale_and_broken_lines_are_skipped(device):
+    dev, _ = device
+    # Urwana linia z otwarcia portu w trakcie nadawania i spóźnione PONG
+    dev._responses.put(parse_line("OT reset=POR ver=0.9.0"))
+    original_write = dev.transport.write_line
+
+    def write_with_noise(line):
+        original_write(line)
+        dev._responses.put(parse_line("PONG"))
+
+    dev.transport.write_line = write_with_noise
+    try:
+        assert dev.command("VER").name.startswith("0.9.0")
+        assert dev.command("ON").fields == {"on": "1"}
+    finally:
+        dev.transport.write_line = original_write

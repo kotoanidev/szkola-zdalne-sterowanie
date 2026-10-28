@@ -19,6 +19,7 @@ from .transport import TransportError
 log = logging.getLogger(__name__)
 
 RESPONSE_TIMEOUT = 0.5
+EXPECTED_REPLY = {"PING": "PONG", "VER": "VER", "GET": "STATE"}
 RECONNECT_INTERVAL = 2.0
 LOG_SIZE = 50
 
@@ -154,10 +155,17 @@ class Device:
             except TransportError as e:
                 self._disconnect(str(e))
                 raise NotConnected(str(e)) from e
-            try:
-                msg = self._responses.get(timeout=timeout)
-            except queue.Empty:
-                raise NotConnected(f"brak odpowiedzi na {line}") from None
+            expected = EXPECTED_REPLY.get(line.split()[0].upper(), "OK")
+            deadline = time.monotonic() + timeout
+            while True:
+                try:
+                    msg = self._responses.get(timeout=max(0.0, deadline - time.monotonic()))
+                except queue.Empty:
+                    raise NotConnected(f"brak odpowiedzi na {line}") from None
+                # Spóźniona odpowiedź albo urwana linia (np. port otwarty w trakcie nadawania)
+                if msg.kind in (expected, "ERR"):
+                    break
+                log.debug("pominięto linię %s %s w odpowiedzi na %s", msg.kind, msg.name, line)
         if msg.kind == "ERR":
             raise DeviceError(f"{line}: ERR {msg.name}")
         if msg.kind in ("OK", "STATE"):
