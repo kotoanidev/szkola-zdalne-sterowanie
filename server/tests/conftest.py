@@ -52,7 +52,7 @@ def sim(clock):
 @pytest.fixture
 def device():
     sim = McuSim()
-    dev = Device(SimTransport(sim), poll_interval=0.1, simulated=True)
+    dev = Device(SimTransport(sim), poll_interval=0.1, simulated="python")
     dev.start()
     assert dev.wait_connected(3)
     yield dev, sim
@@ -62,7 +62,7 @@ def device():
 @pytest.fixture
 def client(device):
     dev, sim = device
-    app = create_app(Config(simulate=True), device=dev, sim=sim)
+    app = create_app(Config(simulate="python"), device=dev, sim=sim)
     app.testing = True
     return app.test_client()
 

@@ -13,6 +13,7 @@ const els = {
 const modeButtons = document.querySelectorAll(".segmented button");
 
 let state = null;
+let simLive = false;
 let draggingPwm = false;
 let tlimEditing = false;
 
@@ -75,7 +76,7 @@ function render(s) {
 
   const level = s.on ? s.pwm / 100 : 0;
   els.lamp.style.setProperty("--b", level);
-  els.simLed.style.setProperty("--b", level);
+  if (!simLive) els.simLed.style.setProperty("--b", level);
   els.stateText.textContent = s.on ? `Włączona · ${s.pwm}\u00a0%` : "Wyłączona";
   els.modeText.textContent = s.mode === "AUTO"
     ? "Tryb AUTO – jasność według oświetlenia"
@@ -99,7 +100,7 @@ function render(s) {
     ? `ALARM: temperatura przekroczyła ${s.tlim}\u00a0°C`
     : `Bez alarmu (próg ${s.tlim}\u00a0°C)`;
   els.alarmText.classList.toggle("alarm", s.alarm);
-  els.simStatus.classList.toggle("blink", s.alarm);
+  els.simStatus.classList.toggle("blink", s.alarm && !simLive);
   if (!tlimEditing) els.tlim.value = s.tlim;
 
   for (const el of [els.btnOn, els.btnOff, els.pwm, ...modeButtons]) el.disabled = !connected;
@@ -129,12 +130,15 @@ function connectEvents() {
     els.log.replaceChildren();
     d.log.forEach(addLog);
     els.simBadge.hidden = !d.simulated;
+    els.simBadge.textContent = d.simulator === "avr" ? "Symulacja: simavr" : "Symulacja";
     els.board.hidden = !d.simulated;
     els.fw.textContent = `Firmware: ${d.firmware || "–"}`;
     if (d.sim) initSim(d.sim);
+    if (d.simulator === "avr" && d.sim) renderSim(d.sim);
     render(d.state);
   });
   es.addEventListener("state", (e) => render(JSON.parse(e.data)));
+  es.addEventListener("sim", (e) => renderSim(JSON.parse(e.data)));
   es.addEventListener("log", (e) => {
     const entry = JSON.parse(e.data);
     addLog(entry);
@@ -219,5 +223,17 @@ for (const [key, input] of Object.entries(simInputs)) {
 document.querySelectorAll("[data-sim-button]").forEach((b) =>
   b.addEventListener("click", () => api("POST", "/api/sim", { button: b.dataset.simButton })));
 $("sim-reset").addEventListener("click", () => api("POST", "/api/sim", { reset: true }));
+$("sim-power").addEventListener("click", () => api("POST", "/api/sim", { reset: "power" }));
+
+// simavr mierzy wypełnienie PWM w rejestrach emulowanego układu
+function renderSim(sim) {
+  simLive = true;
+  els.simLed.style.setProperty("--b", sim.led / 100);
+  els.simStatus.classList.remove("blink");
+  els.simStatus.classList.toggle("lit", sim.status);
+  const duty = $("sim-duty");
+  duty.hidden = false;
+  duty.textContent = `wypełnienie PWM: ${fmtNumber(sim.duty * 100)}\u00a0%`;
+}
 
 connectEvents();

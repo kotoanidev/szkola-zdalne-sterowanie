@@ -10,7 +10,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     config = Config.from_env()
     app = create_app(config)
-    mode = "symulacja" if config.simulate else (config.serial_port or "autowykrywanie portu")
+    mode = f"symulacja: {config.simulate}" if config.simulate else (config.serial_port or "autowykrywanie portu")
     logging.getLogger("app").info("start na %s:%d (%s)", config.host, config.port, mode)
     app.run(host=config.host, port=config.port, threaded=True, use_reloader=False)
 

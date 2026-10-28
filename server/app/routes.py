@@ -9,7 +9,6 @@ import time
 from flask import Blueprint, Response, current_app, jsonify, request
 
 from .device import Device, DeviceError, NotConnected
-from .mcu_sim import McuSim
 
 bp = Blueprint("main", __name__)
 
@@ -20,7 +19,7 @@ def _device() -> Device:
     return current_app.extensions["device"]
 
 
-def _sim() -> McuSim | None:
+def _sim():
     return current_app.extensions.get("sim")
 
 
@@ -98,7 +97,8 @@ def health():
     return jsonify({
         "ok": True,
         "connected": device.connected,
-        "simulated": device.simulated,
+        "simulated": bool(device.simulated),
+        "simulator": device.simulated or None,
         "port": device.transport.port,
         "firmware": device.firmware,
         "server_uptime_s": int(time.time() - device.started_at),
@@ -125,7 +125,8 @@ def events():
             yield _sse("init", {
                 "state": device.snapshot(),
                 "log": device.recent_log(),
-                "simulated": device.simulated,
+                "simulated": bool(device.simulated),
+                "simulator": device.simulated or None,
                 "firmware": device.firmware,
                 "sim": sim.snapshot() if sim else None,
             })
@@ -171,6 +172,6 @@ def post_sim():
     elif button is not None:
         return _error("button: short albo long", 400)
     if data.get("reset"):
-        sim.reset("EXT")
+        sim.reset("POR" if data.get("reset") == "power" else "EXT")
     _device().request_refresh()
     return jsonify(sim.snapshot())

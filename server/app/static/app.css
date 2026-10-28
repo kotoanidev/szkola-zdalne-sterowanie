@@ -176,6 +176,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 28px; }
 }
 .led-status { background: #2a1d1d; }
 .led-status.blink { animation: blink 0.25s steps(1) infinite; }
+.led-status.lit { background: #ff4d4d; box-shadow: 0 0 10px #ff4d4d; transition: none; }
 @keyframes blink { 50% { background: #ff4d4d; box-shadow: 0 0 10px #ff4d4d; } }
 
 .log {

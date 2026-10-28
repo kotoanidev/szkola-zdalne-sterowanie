@@ -43,7 +43,7 @@ class NotConnected(Exception):
 
 class Device:
     def __init__(self, transport: Transport, poll_interval: float = 1.0,
-                 simulated: bool = False, clock: Callable[[], float] = time.time) -> None:
+                 simulated: str = "", clock: Callable[[], float] = time.time) -> None:
         self.transport = transport
         self.poll_interval = poll_interval
         self.simulated = simulated
@@ -122,6 +122,9 @@ class Device:
                 q.put_nowait((kind, data))
             except queue.Full:
                 pass
+
+    def publish_sim(self, snapshot: dict) -> None:
+        self._publish("sim", snapshot)
 
     def _update(self, changes: dict) -> None:
         with self._state_lock:

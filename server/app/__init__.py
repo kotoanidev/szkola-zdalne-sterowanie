@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import atexit
+
 from flask import Flask
 
 from .config import Config
@@ -10,15 +12,23 @@ from .mcu_sim import McuSim
 from .transport import SerialTransport, SimTransport
 
 
-def build_device(config: Config) -> tuple[Device, McuSim | None]:
+def build_device(config: Config) -> tuple[Device, object | None]:
+    if config.simulate == "avr":
+        from .avrsim import AvrSim
+
+        avr = AvrSim()
+        atexit.register(avr.close)
+        device = Device(SerialTransport(avr.pty), config.poll_interval, simulated="avr")
+        avr.on_change = device.publish_sim
+        return device, avr
     if config.simulate:
         sim = McuSim()
-        return Device(SimTransport(sim), config.poll_interval, simulated=True), sim
+        return Device(SimTransport(sim), config.poll_interval, simulated="python"), sim
     return Device(SerialTransport(config.serial_port), config.poll_interval), None
 
 
 def create_app(config: Config | None = None, device: Device | None = None,
-               sim: McuSim | None = None) -> Flask:
+               sim: object | None = None) -> Flask:
     config = config or Config.from_env()
     if device is None:
         device, sim = build_device(config)
