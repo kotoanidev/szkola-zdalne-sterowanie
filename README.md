@@ -170,6 +170,7 @@ Pełna specyfikacja: **[docs/protokol.md](docs/protokol.md)**.
 │   ├── PLAN_PROJEKTU.md/.docx plan, harmonogram, ryzyka
 │   ├── sprzet.md              elementy, piny, zasilanie
 │   ├── protokol.md            protokół UART i API HTTP
+│   ├── dla-specjalisty/       cały kod objaśniony linijka po linijce, od zera
 │   ├── sprawozdania/          sprawozdania z etapów (md → docx)
 │   ├── szablony/              szkolny szablon sprawozdania
 │   └── materialy/             materiały prowadzącego (tylko lokalnie, poza gitem)
@@ -316,6 +317,7 @@ Wyniki trafiają do sprawozdań i dokumentacji technicznej wyłącznie z rzeczyw
 | [docs/sprzet.md](docs/sprzet.md) | sprzęt, połączenia, piny |
 | [docs/protokol.md](docs/protokol.md) | protokół UART, API HTTP |
 | [docs/sprawozdania/](docs/sprawozdania/) | sprawozdania z etapów 1–4 |
+| [docs/dla-specjalisty/](docs/dla-specjalisty/README.md) | cały kod objaśniony linijka po linijce dla osoby, która pierwszy raz widzi kod |
 
 Sprawozdania piszemy w Markdown i zamieniamy na `.docx` w szkolnym szablonie (nagłówek, stopka, style):
 
