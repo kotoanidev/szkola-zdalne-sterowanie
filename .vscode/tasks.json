@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "firmware: make",
+            "type": "shell",
+            "command": "make",
+            "options": { "cwd": "${workspaceFolder}/firmware" },
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": ["relative", "${workspaceFolder}/firmware"]
+            },
+            "group": { "kind": "build", "isDefault": true }
+        }
+    ]
+}

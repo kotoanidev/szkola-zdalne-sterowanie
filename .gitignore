@@ -40,4 +40,6 @@ desktop.ini
 # Edytory
 .vscode/*
 !.vscode/extensions.json
+!.vscode/c_cpp_properties.json
+!.vscode/tasks.json
 .idea/

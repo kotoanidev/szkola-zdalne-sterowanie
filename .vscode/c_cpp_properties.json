@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "compilerPath": "${env:HOME}/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/bin/avr-gcc",
+            "compilerArgs": ["-mmcu=atmega8"],
+            "defines": ["F_CPU=1000000UL"],
+            "includePath": ["${workspaceFolder}/firmware/include"],
+            "cStandard": "gnu99",
+            "intelliSenseMode": "linux-gcc-x86"
+        }
+    ],
+    "version": 4
+}
