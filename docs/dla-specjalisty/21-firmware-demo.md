@@ -1,6 +1,6 @@
 # Firmware: `demo/etap1.c`, program pokazowy
 
-[← Poprzedni](20-firmware-state.md) · [Spis treści](README.md) · [Następny →](30-serwer-start.md)
+[← Poprzedni](20-firmware-state.md) · [Spis treści](README.md) · [Następny →](22-firmware-ds18b20.md)
 
 **Po co ten plik:** to mały, osobny program z etapu 1. Pokazuje samą podstawę sterowania układem: miganie diodą i odczyt przycisku za pomocą rejestrów `DDRx`, `PORTx` i `PINx`. **Jeśli dopiero zaczynasz, przeczytaj go jako pierwszy kod w C**, bo jest najprostszy.
 
@@ -106,4 +106,4 @@
 
 ---
 
-[← Poprzedni](20-firmware-state.md) · [Spis treści](README.md) · [Następny →](30-serwer-start.md)
+[← Poprzedni](20-firmware-state.md) · [Spis treści](README.md) · [Następny →](22-firmware-ds18b20.md)

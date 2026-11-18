@@ -40,7 +40,8 @@ Każdy dokument pokazuje prawdziwy kod z numerami linii, a pod nim objaśnia ka�
 | [sensors](18-firmware-sensors.md) | `firmware/src/sensors.c` | temperatura, potencjometr, tryb AUTO |
 | [button](19-firmware-button.md) | `firmware/src/button.c` | przycisk, krótkie i długie naciśnięcie |
 | [state](20-firmware-state.md) | `firmware/src/state.c` | stan urządzenia i pamięć EEPROM |
-| [demo](21-firmware-demo.md) | `firmware/demo/etap1.c` | prosty program pokazowy |
+| [demo](21-firmware-demo.md) | `firmware/demo/etap1.c` | prosty program pokazowy etapu 1 (ATmega8) |
+| [ds18b20](22-firmware-ds18b20.md) | `firmware/src/ds18b20.c` | czujnik temperatury DS18B20 na 1-Wire |
 
 ### Serwer: program na Raspberry Pi (Python)
 

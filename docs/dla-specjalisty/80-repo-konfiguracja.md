@@ -204,13 +204,17 @@ Lista plików, które git ma pomijać: wyniki kompilacji, pliki tymczasowe, usta
  40  # Edytory
  41  .vscode/*
  42  !.vscode/extensions.json
- 43  .idea/
+ 43  !.vscode/c_cpp_properties.json
+ 44  !.vscode/tasks.json
+ 45  .idea/
 ```
 
 - **Linia 40:** Komentarz: edytory.
 - **Linia 41:** Pomiń zawartość katalogu VS Code...
 - **Linia 42:** ...oprócz listy polecanych rozszerzeń. `!` oznacza wyjątek.
-- **Linia 43:** Pomiń katalog edytorów JetBrains.
+- **Linia 43:** Wyjątek: ustawienia podpowiadania kodu (IntelliSense) dla avr-gcc i ATmega32, wspólne dla obu komputerów.
+- **Linia 44:** Wyjątek: zadanie budowania `Ctrl+Shift+B`, które uruchamia `make` w katalogu `firmware/`.
+- **Linia 45:** Pomiń katalog edytorów JetBrains.
 
 ---
 

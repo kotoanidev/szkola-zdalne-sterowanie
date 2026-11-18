@@ -127,13 +127,13 @@
  55  def test_health(client):
  56      r = client.get("/api/health")
  57      assert r.json["ok"] and r.json["connected"] and r.json["simulated"]
- 58      assert r.json["firmware"].startswith("0.9.0")
+ 58      assert r.json["firmware"].startswith("0.10.0")
 ```
 
 - **Linia 55:** Test adresu `/api/health`.
 - **Linia 56:** Wyślij zapytanie.
 - **Linia 57:** Serwer działa, ma połączenie i jest w trybie symulacji.
-- **Linia 58:** Wersja firmware zaczyna się od `0.9.0`.
+- **Linia 58:** Wersja firmware zaczyna się od `0.10.0`.
 
 ```python
  61  def test_local_button_reaches_state(client, device):
@@ -233,7 +233,7 @@
 104  def test_stale_and_broken_lines_are_skipped(device):
 105      dev, _ = device
 106      # Urwana linia z otwarcia portu w trakcie nadawania i spóźnione PONG
-107      dev._responses.put(parse_line("OT reset=POR ver=0.9.0"))
+107      dev._responses.put(parse_line("OT reset=POR ver=0.10.0"))
 108      original_write = dev.transport.write_line
 109
 110      def write_with_noise(line):
@@ -242,7 +242,7 @@
 113
 114      dev.transport.write_line = write_with_noise
 115      try:
-116          assert dev.command("VER").name.startswith("0.9.0")
+116          assert dev.command("VER").name.startswith("0.10.0")
 117          assert dev.command("ON").fields == {"on": "1"}
 118      finally:
 119          dev.transport.write_line = original_write

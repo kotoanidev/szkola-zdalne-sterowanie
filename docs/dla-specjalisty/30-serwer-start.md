@@ -1,6 +1,6 @@
 # Serwer: start programu i konfiguracja
 
-[← Poprzedni](21-firmware-demo.md) · [Spis treści](README.md) · [Następny →](31-serwer-protocol.md)
+[← Poprzedni](22-firmware-ds18b20.md) · [Spis treści](README.md) · [Następny →](31-serwer-protocol.md)
 
 **Po co te pliki:** to, co dzieje się przy uruchomieniu serwera. `__main__.py` jest punktem startu, `config.py` czyta ustawienia, a `__init__.py` składa wszystko w działającą aplikację. Składnia Pythona jest wytłumaczona w [podstawach Pythona](02-podstawy-pythona.md).
 
@@ -133,7 +133,7 @@ Odczyt ustawień. Numer portu czy nazwa łącza nie są wpisane w kodzie na sta�
 Plik `__init__.py` czyni z katalogu pakiet. Tu powstaje aplikacja: wybieramy łącze (prawdziwe albo symulowane) i rejestrujemy adresy strony.
 
 ```python
-  1  """Serwer Flask: mostek między przeglądarką a ATmega8 (docs/protokol.md, rozdz. 5)."""
+  1  """Serwer Flask: mostek między przeglądarką a ATmega32A (docs/protokol.md, rozdz. 5)."""
   2
   3  from __future__ import annotations
   4
@@ -147,7 +147,7 @@ Plik `__init__.py` czyni z katalogu pakiet. Tu powstaje aplikacja: wybieramy ł�
  12  from .transport import SerialTransport, SimTransport
 ```
 
-- **Linia 1:** Docstring: serwer Flask jest mostkiem między przeglądarką a układem ATmega8.
+- **Linia 1:** Docstring: serwer Flask jest mostkiem między przeglądarką a układem ATmega32A.
 - **Linia 3:** Nowszy zapis podpowiedzi typów.
 - **Linia 5:** Biblioteka pozwalająca zarejestrować funkcję do wykonania przy zamykaniu programu.
 - **Linia 7:** Pobiera klasę `Flask`, czyli główny obiekt serwera WWW.
@@ -225,4 +225,4 @@ Plik `__init__.py` czyni z katalogu pakiet. Tu powstaje aplikacja: wybieramy ł�
 
 ---
 
-[← Poprzedni](21-firmware-demo.md) · [Spis treści](README.md) · [Następny →](31-serwer-protocol.md)
+[← Poprzedni](22-firmware-ds18b20.md) · [Spis treści](README.md) · [Następny →](31-serwer-protocol.md)

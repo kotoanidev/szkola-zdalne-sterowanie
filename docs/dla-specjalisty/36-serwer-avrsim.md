@@ -63,11 +63,11 @@ Serwer łączy się z emulowanym układem przez **pseudoterminal**, czyli progra
 ```python
  27  class AvrSim:
  28      def __init__(self, binary: Path = DEFAULT_BINARY, hex_file: Path = DEFAULT_HEX,
- 29                   speed: float = 1.0, eeprom: Path | None = None, sensor: str = "lm35") -> None:
+ 29                   speed: float = 1.0, eeprom: Path | None = None) -> None:
  30          for path, hint in ((binary, "make -C sim"), (hex_file, "make -C firmware")):
  31              if not Path(path).exists():
  32                  raise AvrSimError(f"brak {path} – uruchom: {hint}")
- 33          args = [str(binary), "--speed", str(speed), "--sensor", sensor]
+ 33          args = [str(binary), "--speed", str(speed)]
  34          if eeprom is not None:
  35              args += ["--eeprom", str(eeprom)]
  36          args.append(str(hex_file))
@@ -75,7 +75,7 @@ Serwer łączy się z emulowanym układem przez **pseudoterminal**, czyli progra
 
 - **Linia 27:** Początek klasy.
 - **Linia 28:** Funkcja tworząca obiekt. Dostaje ścieżki emulatora i firmware...
-- **Linia 29:** ...szybkość symulacji, plik na EEPROM i typ czujnika.
+- **Linia 29:** ...szybkość symulacji i plik na EEPROM.
 - **Linia 30:** Dla każdej z dwóch ścieżek, wraz z podpowiedzią, jak zbudować brakujący plik...
 - **Linia 31:** ...jeśli pliku nie ma...
 - **Linia 32:** ...zgłoś błąd z podpowiedzią.
@@ -213,7 +213,7 @@ Serwer łączy się z emulowanym układem przez **pseudoterminal**, czyli progra
  98              self.ldr = max(0, min(1023, int(ldr)))
  99              self._send(f"ldr {self.ldr}")
 100          if temp_c is not None:
-101              self.temp_c = max(-20.0, min(150.0, float(temp_c)))
+101              self.temp_c = max(-55.0, min(125.0, float(temp_c)))
 102              self._send(f"temp {self.temp_c}")
 103
 104      def press_button(self, long: bool = False) -> None:
@@ -233,7 +233,7 @@ Serwer łączy się z emulowanym układem przez **pseudoterminal**, czyli progra
 - **Linia 98:** ...zapisz wartość przyciętą do zakresu 0–1023...
 - **Linia 99:** ...i przekaż ją emulatorowi.
 - **Linia 100:** Jeśli podano temperaturę...
-- **Linia 101:** ...zapisz wartość przyciętą do zakresu od -20 do 150 °C...
+- **Linia 101:** ...zapisz wartość przyciętą do zakresu czujnika DS18B20, od -55 do 125 °C...
 - **Linia 102:** ...i przekaż ją emulatorowi.
 - **Linia 104:** Metoda naciskająca wirtualny przycisk.
 - **Linia 105:** Wyślij polecenie z czasem naciśnięcia: 1500 ms dla długiego, 100 ms dla krótkiego.

@@ -205,14 +205,14 @@ Testy parsera, czyli sprawdzenie, czy tekst jest poprawnie rozkładany na częś
 ```python
  18  def test_parse_err_and_ver():
  19      assert parse_line("ERR ARG").name == "ARG"
- 20      assert parse_line("VER 0.9.0").name == "0.9.0"
+ 20      assert parse_line("VER 0.10.0").name == "0.10.0"
  21      assert parse_line("PONG").kind == "PONG"
  22      assert parse_line("   ").kind == ""
 ```
 
 - **Linia 18:** Test: wiadomości `ERR` i `VER`.
 - **Linia 19:** Nazwa błędu to `ARG`.
-- **Linia 20:** Nazwa wersji to `0.9.0`.
+- **Linia 20:** Nazwa wersji to `0.10.0`.
 - **Linia 21:** Rodzaj odpowiedzi to `PONG`.
 - **Linia 22:** Linia z samych spacji daje pusty rodzaj.
 
@@ -235,10 +235,12 @@ Testy parsera, czyli sprawdzenie, czy tekst jest poprawnie rozkładany na częś
 ```python
  33  def test_state_conversion_skips_garbage():
  34      assert fields_to_state({"pwm": "x", "mode": "FOO", "temp": "2.5"}) == {"temp": 2.5}
+ 35      assert fields_to_state({"temp": "ERR"}) == {"temp": None}
 ```
 
 - **Linia 33:** Test: uszkodzone dane są pomijane.
 - **Linia 34:** Zła liczba i zły tryb znikają, zostaje tylko poprawna temperatura.
+- **Linia 35:** Temperatura `ERR` (czujnik nie odpowiada) zamienia się na `None`, czyli brak wartości.
 
 ---
 

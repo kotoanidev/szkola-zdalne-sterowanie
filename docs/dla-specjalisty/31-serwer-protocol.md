@@ -107,7 +107,7 @@ W wiadomości wszystko jest tekstem, nawet `"60"`. Tu zamieniamy to na właściw
  50              elif key in ("pwm", "pot", "ldr", "tlim"):
  51                  state[key] = int(value)
  52              elif key == "temp":
- 53                  state[key] = float(value)
+ 53                  state[key] = None if value == "ERR" else float(value)
  54              elif key == "up":
  55                  state["uptime_s"] = int(value)
  56              elif key == "mode" and value in MODES:
@@ -127,7 +127,7 @@ W wiadomości wszystko jest tekstem, nawet `"60"`. Tu zamieniamy to na właściw
 - **Linia 50:** Jeśli klucz to jeden z liczbowych...
 - **Linia 51:** ...zamień na liczbę całkowitą.
 - **Linia 52:** Jeśli klucz to temperatura...
-- **Linia 53:** ...zamień na liczbę z ułamkiem.
+- **Linia 53:** ...zamień na liczbę z ułamkiem, a napis `ERR` (brak odczytu z czujnika) na `None`.
 - **Linia 54:** Jeśli klucz to czas pracy...
 - **Linia 55:** ...zamień na liczbę i zapisz pod dłuższą nazwą `uptime_s`.
 - **Linia 56:** Jeśli klucz to tryb i wartość jest dozwolona...

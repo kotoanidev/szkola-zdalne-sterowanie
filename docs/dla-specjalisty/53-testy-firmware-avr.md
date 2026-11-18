@@ -59,7 +59,7 @@
 
 ```python
  24  class Link:
- 25      """Terminal szeregowy podłączony do UART emulowanego ATmega8."""
+ 25      """Terminal szeregowy podłączony do UART emulowanego ATmega32A."""
  26
  27      def __init__(self, port: str) -> None:
  28          self.port = serial.Serial(port, 9600, timeout=0.05)
@@ -67,7 +67,7 @@
 ```
 
 - **Linia 24:** Klasa udająca terminal podłączony do układu.
-- **Linia 25:** Docstring: terminal szeregowy podłączony do UART emulowanego ATmega8.
+- **Linia 25:** Docstring: terminal szeregowy podłączony do UART emulowanego ATmega32A.
 - **Linia 27:** Funkcja tworząca obiekt. Dostaje nazwę portu.
 - **Linia 28:** Otwórz port: 9600 bitów na sekundę, odczyt czeka najwyżej 0,05 s.
 - **Linia 29:** Lista odebranych zdarzeń.
@@ -195,7 +195,7 @@
  87  @pytest.fixture
  88  def link(avr):
  89      link = Link(avr.pty)
- 90      assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=POR ver=0.9.0"
+ 90      assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=POR ver=0.10.0"
  91      yield link
  92      link.port.close()
 ```
@@ -212,7 +212,7 @@
 ```python
  95  def test_commands(link):
  96      assert link.cmd("PING") == "PONG"
- 97      assert link.cmd("ver") == "VER 0.9.0"
+ 97      assert link.cmd("ver") == "VER 0.10.0"
  98      assert link.cmd("ON") == "OK on=1"
  99      assert link.cmd("TOGGLE") == "OK on=0"
 100      assert link.cmd(" pwm 60 ") == "OK pwm=60"
@@ -265,169 +265,201 @@
 
 ```python
 122  def test_get_state(link):
-123      line = link.cmd("GET")
-124      assert re.fullmatch(r"STATE on=0 pwm=50 mode=MANUAL pot=512 ldr=500 temp=22\.0 "
-125                          r"alarm=0 tlim=50 up=\d+", line), line
+123      # Pierwszy pomiar DS18B20 jest gotowy ok. 0,8 s po starcie
+124      assert wait_for(lambda: "temp=ERR" not in link.cmd("GET"))
+125      line = link.cmd("GET")
+126      assert re.fullmatch(r"STATE on=0 pwm=50 mode=MANUAL pot=512 ldr=500 temp=22\.0 "
+127                          r"alarm=0 tlim=50 up=\d+", line), line
 ```
 
 - **Linia 122:** Test: linia stanu.
-- **Linia 123:** Wyślij `GET`.
-- **Linia 124:** Cała linia musi pasować do wzorca. `\.` to dosłowna kropka...
-- **Linia 125:** ...a `\d+` to jedna lub więcej cyfr. Czas pracy może być różny.
+- **Linia 123:** Komentarz: pierwszy pomiar z czujnika DS18B20 jest gotowy dopiero ok. 0,8 s po starcie.
+- **Linia 124:** Czekaj, aż w odpowiedzi na `GET` zamiast `temp=ERR` pojawi się temperatura.
+- **Linia 125:** Wyślij `GET`.
+- **Linia 126:** Cała linia musi pasować do wzorca. `\.` to dosłowna kropka...
+- **Linia 127:** ...a `\d+` to jedna lub więcej cyfr. Czas pracy może być różny.
+
+```python
+130  def test_ds18b20_negative_and_missing(link, avr):
+131      avr.set_inputs(temp_c=-10.5)
+132      assert wait_for(lambda: "temp=-10.5 " in link.cmd("GET"), 3)
+133      avr._send("temp none")
+134      assert wait_for(lambda: "temp=ERR " in link.cmd("GET"), 3)
+135      avr.set_inputs(temp_c=23.5)
+136      assert wait_for(lambda: "temp=23.5 " in link.cmd("GET"), 3)
+```
+
+- **Linia 130:** Test: czujnik DS18B20 – temperatura ujemna i brak czujnika.
+- **Linia 131:** Ustaw -10,5 °C. Ujemne temperatury czujnik koduje inaczej niż dodatnie, więc to osobny przypadek.
+- **Linia 132:** W ciągu 3 s odpowiedź na `GET` musi zawierać `temp=-10.5`.
+- **Linia 133:** Odłącz wirtualny czujnik (linia 1-Wire nikt nie odpowiada).
+- **Linia 134:** Układ musi zgłosić `temp=ERR`.
+- **Linia 135:** Podłącz czujnik z powrotem z temperaturą 23,5 °C.
+- **Linia 136:** Pomiary muszą wrócić same, bez resetu.
 
 ### Dioda i przycisk
 
 ```python
-128  def test_pwm_fade_and_gamma(link, avr):
-129      link.cmd("PWM 100")
-130      link.cmd("ON")
-131      time.sleep(0.15)
-132      assert 0 < avr.duty < 1, "jasność ma rosnąć płynnie"
-133      assert wait_for(lambda: avr.duty == 1.0)
-134      link.cmd("PWM 50")
-135      assert wait_for(lambda: abs(avr.duty - 256 / 1023) < 1e-3), avr.duty
-136      link.cmd("OFF")
-137      assert wait_for(lambda: avr.duty == 0)
+139  def test_pwm_fade_and_gamma(link, avr):
+140      link.cmd("PWM 100")
+141      link.cmd("ON")
+142      time.sleep(0.15)
+143      assert 0 < avr.duty < 1, "jasność ma rosnąć płynnie"
+144      assert wait_for(lambda: avr.duty == 1.0)
+145      link.cmd("PWM 50")
+146      assert wait_for(lambda: abs(avr.duty - 256 / 1023) < 1e-3), avr.duty
+147      link.cmd("OFF")
+148      assert wait_for(lambda: avr.duty == 0)
 ```
 
-- **Linia 128:** Test: płynna zmiana jasności i korekcja gamma.
-- **Linia 129:** Ustaw pełną jasność.
-- **Linia 130:** Włącz wyjście.
-- **Linia 131:** Poczekaj 0,15 s, czyli krócej niż trwa pełne przejście.
-- **Linia 132:** Wypełnienie musi być między 0 a 1, czyli jasność jest w trakcie zmiany.
-- **Linia 133:** Po chwili wypełnienie musi dojść do 100 %.
-- **Linia 134:** Ustaw jasność 50 %.
-- **Linia 135:** Wypełnienie musi wynieść około 256/1023, czyli 25 %, bo jasność jest podnoszona do kwadratu.
-- **Linia 136:** Wyłącz wyjście.
-- **Linia 137:** Wypełnienie musi spaść do zera.
+- **Linia 139:** Test: płynna zmiana jasności i korekcja gamma.
+- **Linia 140:** Ustaw pełną jasność.
+- **Linia 141:** Włącz wyjście.
+- **Linia 142:** Poczekaj 0,15 s, czyli krócej niż trwa pełne przejście.
+- **Linia 143:** Wypełnienie musi być między 0 a 1, czyli jasność jest w trakcie zmiany.
+- **Linia 144:** Po chwili wypełnienie musi dojść do 100 %.
+- **Linia 145:** Ustaw jasność 50 %.
+- **Linia 146:** Wypełnienie musi wynieść około 256/1023, czyli 25 %, bo jasność jest podnoszona do kwadratu.
+- **Linia 147:** Wyłącz wyjście.
+- **Linia 148:** Wypełnienie musi spaść do zera.
 
 ```python
-140  def test_button_short_and_long(link, avr):
-141      avr.press_button()
-142      assert link.wait_event("EVT BTN") == "EVT BTN on=1"
-143      avr.press_button(long=True)
-144      assert link.wait_event("EVT BTN", 3) == "EVT BTN mode=AUTO"
+151  def test_button_short_and_long(link, avr):
+152      avr.press_button()
+153      assert link.wait_event("EVT BTN") == "EVT BTN on=1"
+154      avr.press_button(long=True)
+155      assert link.wait_event("EVT BTN", 3) == "EVT BTN mode=AUTO"
 ```
 
-- **Linia 140:** Test: krótkie i długie naciśnięcie.
-- **Linia 141:** Krótkie naciśnięcie.
-- **Linia 142:** Zdarzenie o włączeniu.
-- **Linia 143:** Długie naciśnięcie.
-- **Linia 144:** Zdarzenie o zmianie trybu.
+- **Linia 151:** Test: krótkie i długie naciśnięcie.
+- **Linia 152:** Krótkie naciśnięcie.
+- **Linia 153:** Zdarzenie o włączeniu.
+- **Linia 154:** Długie naciśnięcie.
+- **Linia 155:** Zdarzenie o zmianie trybu.
 
 ### Czujniki
 
 ```python
-147  def test_potentiometer_event(link, avr):
-148      time.sleep(0.2)  # pierwszy odczyt po starcie to punkt odniesienia, nie zmiana
-149      avr.set_inputs(pot=1023)
-150      assert link.wait_event("EVT POT") == "EVT POT pwm=100"
+158  def test_potentiometer_event(link, avr):
+159      time.sleep(0.2)  # pierwszy odczyt po starcie to punkt odniesienia, nie zmiana
+160      avr.set_inputs(pot=1023)
+161      assert link.wait_event("EVT POT") == "EVT POT pwm=100"
 ```
 
-- **Linia 147:** Test: zdarzenie od potencjometru.
-- **Linia 148:** Poczekaj, bo pierwszy odczyt to tylko punkt odniesienia.
-- **Linia 149:** Skręć potencjometr na maksimum.
-- **Linia 150:** Musi przyjść zdarzenie z jasnością 100 %.
+- **Linia 158:** Test: zdarzenie od potencjometru.
+- **Linia 159:** Poczekaj, bo pierwszy odczyt to tylko punkt odniesienia.
+- **Linia 160:** Skręć potencjometr na maksimum.
+- **Linia 161:** Musi przyjść zdarzenie z jasnością 100 %.
 
 ```python
-153  def test_auto_mode_follows_light(link, avr):
-154      link.cmd("ON")
-155      link.cmd("MODE AUTO")
-156      for ldr, pwm in ((100, 100), (900, 0), (500, 50)):
-157          avr.set_inputs(ldr=ldr)
-158          assert wait_for(lambda: f"pwm={pwm} " in link.cmd("GET")), (ldr, pwm)
+164  def test_auto_mode_follows_light(link, avr):
+165      link.cmd("ON")
+166      link.cmd("MODE AUTO")
+167      for ldr, pwm in ((100, 100), (900, 0), (500, 50)):
+168          avr.set_inputs(ldr=ldr)
+169          assert wait_for(lambda: f"pwm={pwm} " in link.cmd("GET")), (ldr, pwm)
 ```
 
-- **Linia 153:** Test: tryb AUTO reaguje na światło.
-- **Linia 154:** Włącz wyjście.
-- **Linia 155:** Włącz tryb AUTO.
-- **Linia 156:** Dla trzech par: odczyt fotorezystora i oczekiwana jasność...
-- **Linia 157:** ...ustaw odczyt...
-- **Linia 158:** ...i poczekaj, aż `GET` pokaże oczekiwaną jasność.
+- **Linia 164:** Test: tryb AUTO reaguje na światło.
+- **Linia 165:** Włącz wyjście.
+- **Linia 166:** Włącz tryb AUTO.
+- **Linia 167:** Dla trzech par: odczyt fotorezystora i oczekiwana jasność...
+- **Linia 168:** ...ustaw odczyt...
+- **Linia 169:** ...i poczekaj, aż `GET` pokaże oczekiwaną jasność.
 
 ```python
-161  def test_temperature_alarm(link, avr):
-162      link.cmd("TLIM 30")
-163      avr.set_inputs(temp_c=35)
-164      assert re.fullmatch(r"EVT TEMP alarm=1 temp=3\d\.\d", link.wait_event("EVT TEMP"))
-165      avr.set_inputs(temp_c=20)
-166      assert re.fullmatch(r"EVT TEMP alarm=0 temp=\d+\.\d", link.wait_event("EVT TEMP"))
+164  def test_auto_mode_follows_light(link, avr):
+165      link.cmd("ON")
+166      link.cmd("MODE AUTO")
+167      for ldr, pwm in ((100, 100), (900, 0), (500, 50)):
+168          avr.set_inputs(ldr=ldr)
+169          assert wait_for(lambda: f"pwm={pwm} " in link.cmd("GET")), (ldr, pwm)
+170
+171
+172  def test_temperature_alarm(link, avr):
+173      link.cmd("TLIM 30")
+174      avr.set_inputs(temp_c=35)
+175      # DS18B20 mierzy co 1 s, alarm sprawdzany co 0,5 s
+176      assert link.wait_event("EVT TEMP", 3) == "EVT TEMP alarm=1 temp=35.0"
+177      avr.set_inputs(temp_c=20)
+178      assert link.wait_event("EVT TEMP", 3) == "EVT TEMP alarm=0 temp=20.0"
 ```
 
-- **Linia 161:** Test: alarm temperatury.
-- **Linia 162:** Ustaw próg 30 °C.
-- **Linia 163:** Temperatura 35 °C.
-- **Linia 164:** Musi przyjść zdarzenie włączenia alarmu. Wzorzec dopuszcza małe odchyłki.
-- **Linia 165:** Temperatura 20 °C.
-- **Linia 166:** Musi przyjść zdarzenie wyłączenia alarmu.
+- **Linia 172:** Test: alarm temperatury.
+- **Linia 173:** Ustaw próg 30 °C.
+- **Linia 174:** Temperatura 35 °C.
+- **Linia 175:** Komentarz: czujnik DS18B20 mierzy co sekundę, a alarm jest sprawdzany co pół sekundy, więc czekamy do 3 s.
+- **Linia 176:** Musi przyjść zdarzenie włączenia alarmu z dokładną temperaturą 35,0 °C.
+- **Linia 177:** Temperatura 20 °C.
+- **Linia 178:** Musi przyjść zdarzenie wyłączenia alarmu z temperaturą 20,0 °C.
 
 ### Pamięć i reset
 
 ```python
-169  def test_state_survives_power_loss(link, avr):
-170      link.cmd("ON")
-171      link.cmd("PWM 70")
-172      link.cmd("TLIM 40")
-173      time.sleep(2.6)  # zapis do EEPROM 2 s po ostatniej zmianie
-174      avr.reset("POR")
-175      assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=POR ver=0.9.0"
-176      state = link.cmd("GET")
-177      assert "on=1 pwm=70" in state and "tlim=40" in state
+181  def test_state_survives_power_loss(link, avr):
+182      link.cmd("ON")
+183      link.cmd("PWM 70")
+184      link.cmd("TLIM 40")
+185      time.sleep(2.6)  # zapis do EEPROM 2 s po ostatniej zmianie
+186      avr.reset("POR")
+187      assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=POR ver=0.10.0"
+188      state = link.cmd("GET")
+189      assert "on=1 pwm=70" in state and "tlim=40" in state
 ```
 
-- **Linia 169:** Test: stan przetrwa zanik zasilania.
-- **Linia 170:** Włącz wyjście.
-- **Linia 171:** Ustaw jasność.
-- **Linia 172:** Ustaw próg.
-- **Linia 173:** Poczekaj 2,6 s, bo zapis do EEPROM odbywa się 2 s po ostatniej zmianie.
-- **Linia 174:** Symuluj zanik zasilania.
-- **Linia 175:** Układ musi się przedstawić z przyczyną `POR`.
-- **Linia 176:** Odczytaj stan.
-- **Linia 177:** Zapisane wartości muszą wrócić.
+- **Linia 181:** Test: stan przetrwa zanik zasilania.
+- **Linia 182:** Włącz wyjście.
+- **Linia 183:** Ustaw jasność.
+- **Linia 184:** Ustaw próg.
+- **Linia 185:** Poczekaj 2,6 s, bo zapis do EEPROM odbywa się 2 s po ostatniej zmianie.
+- **Linia 186:** Symuluj zanik zasilania.
+- **Linia 187:** Układ musi się przedstawić z przyczyną `POR`.
+- **Linia 188:** Odczytaj stan.
+- **Linia 189:** Zapisane wartości muszą wrócić.
 
 ```python
-180  def test_external_reset_reason(link, avr):
-181      avr.reset()
-182      assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=EXT ver=0.9.0"
+192  def test_external_reset_reason(link, avr):
+193      avr.reset()
+194      assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=EXT ver=0.10.0"
 ```
 
-- **Linia 180:** Test: przyczyna resetu zewnętrznego.
-- **Linia 181:** Zresetuj układ.
-- **Linia 182:** Układ musi zgłosić przyczynę `EXT`.
+- **Linia 192:** Test: przyczyna resetu zewnętrznego.
+- **Linia 193:** Zresetuj układ.
+- **Linia 194:** Układ musi zgłosić przyczynę `EXT`.
 
 ### Cały łańcuch
 
 ```python
-185  def test_server_end_to_end(avr):
-186      dev = Device(SerialTransport(avr.pty), poll_interval=0.2, simulated="avr")
-187      dev.start()
-188      try:
-189          assert dev.wait_connected(5)
-190          client = create_app(Config(simulate="avr"), device=dev, sim=avr).test_client()
-191          assert client.get("/on").json["on"] is True
-192          assert client.post("/api/state", json={"pwm": 100}).json["pwm"] == 100
-193          assert wait_for(lambda: avr.duty == 1.0)
-194          avr.press_button()
-195          assert wait_for(lambda: dev.snapshot()["on"] is False)
-196          assert client.get("/api/health").json["firmware"] == "0.9.0"
-197      finally:
-198          dev.stop()
+197  def test_server_end_to_end(avr):
+198      dev = Device(SerialTransport(avr.pty), poll_interval=0.2, simulated="avr")
+199      dev.start()
+200      try:
+201          assert dev.wait_connected(5)
+202          client = create_app(Config(simulate="avr"), device=dev, sim=avr).test_client()
+203          assert client.get("/on").json["on"] is True
+204          assert client.post("/api/state", json={"pwm": 100}).json["pwm"] == 100
+205          assert wait_for(lambda: avr.duty == 1.0)
+206          avr.press_button()
+207          assert wait_for(lambda: dev.snapshot()["on"] is False)
+208          assert client.get("/api/health").json["firmware"] == "0.10.0"
+209      finally:
+210          dev.stop()
 ```
 
-- **Linia 185:** Test całości: zapytanie HTTP, serwer, UART i firmware w emulatorze.
-- **Linia 186:** Utwórz obiekt `Device` podłączony do emulatora.
-- **Linia 187:** Uruchom jego wątki.
-- **Linia 188:** Próbuj, a na końcu posprzątaj.
-- **Linia 189:** Połączenie musi powstać w ciągu 5 s.
-- **Linia 190:** Utwórz klienta testowego.
-- **Linia 191:** `/on` włącza wyjście.
-- **Linia 192:** Zmiana jasności działa.
-- **Linia 193:** Wypełnienie w emulatorze musi dojść do 100 %.
-- **Linia 194:** Naciśnij przycisk.
-- **Linia 195:** Serwer musi zobaczyć wyłączenie.
-- **Linia 196:** Wersja firmware musi być prawdziwa, bez końcówki `-sim`.
-- **Linia 197:** Na końcu, także przy błędzie:
-- **Linia 198:** Zatrzymaj wątki.
+- **Linia 197:** Test całości: zapytanie HTTP, serwer, UART i firmware w emulatorze.
+- **Linia 198:** Utwórz obiekt `Device` podłączony do emulatora.
+- **Linia 199:** Uruchom jego wątki.
+- **Linia 200:** Próbuj, a na końcu posprzątaj.
+- **Linia 201:** Połączenie musi powstać w ciągu 5 s.
+- **Linia 202:** Utwórz klienta testowego.
+- **Linia 203:** `/on` włącza wyjście.
+- **Linia 204:** Zmiana jasności działa.
+- **Linia 205:** Wypełnienie w emulatorze musi dojść do 100 %.
+- **Linia 206:** Naciśnij przycisk.
+- **Linia 207:** Serwer musi zobaczyć wyłączenie.
+- **Linia 208:** Wersja firmware musi być prawdziwa, bez końcówki `-sim`.
+- **Linia 209:** Na końcu, także przy błędzie:
+- **Linia 210:** Zatrzymaj wątki.
 
 ---
 

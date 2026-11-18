@@ -41,7 +41,7 @@
  13        <span class="brand-dot" aria-hidden="true"></span>
  14        <div>
  15          <h1>Oświetlenie LED</h1>
- 16          <p class="subtitle">ATmega8 · Raspberry Pi · sieć LAN</p>
+ 16          <p class="subtitle">ATmega32A (ATB 1.05) · Raspberry Pi · sieć LAN</p>
  17        </div>
  18      </div>
  19      <div class="status-group">
@@ -57,7 +57,7 @@
 - **Linia 13:** Pomarańczowa kropka. `aria-hidden="true"` mówi czytnikom ekranu, żeby ją pominęły, bo to tylko ozdoba.
 - **Linia 14:** Pudełko na teksty.
 - **Linia 15:** Główny nagłówek strony.
-- **Linia 16:** Podtytuł: elementy projektu.
+- **Linia 16:** Podtytuł: elementy projektu (mikrokontroler na płytce ATB, Raspberry Pi, sieć).
 - **Linia 17:** Koniec pudełka na teksty.
 - **Linia 18:** Koniec pudełka na logo.
 - **Linia 19:** Pudełko na znaczki stanu.
@@ -231,8 +231,8 @@ Widoczna tylko w trybie symulacji. Zastępuje prawdziwe elementy na płytce.
  95          <h2 id="h-board">Wirtualna płytka</h2>
  96          <p class="muted small">Tryb symulacji: tu zmieniasz to, co na prawdziwej płytce robią przycisk i czujniki.</p>
  97          <div class="board-leds">
- 98            <span class="board-led"><span id="sim-led" class="led led-main"></span>PB1 – dioda</span>
- 99            <span class="board-led"><span id="sim-status" class="led led-status"></span>PD7 – status</span>
+ 98            <span class="board-led"><span id="sim-led" class="led led-main"></span>PD5 – dioda LED8</span>
+ 99            <span class="board-led"><span id="sim-status" class="led led-status"></span>PC0 – status LED1</span>
 100            <span class="board-led muted" id="sim-duty" hidden></span>
 101          </div>
 ```
@@ -248,15 +248,15 @@ Widoczna tylko w trybie symulacji. Zastępuje prawdziwe elementy na płytce.
 
 ```html
 102          <label class="field" for="sim-pot">
-103            <span class="field-head"><span>Potencjometr (ADC0)</span><output id="sim-pot-out">–</output></span>
+103            <span class="field-head"><span>Potencjometr (PA0)</span><output id="sim-pot-out">–</output></span>
 104            <input id="sim-pot" type="range" min="0" max="1023" value="512">
 105          </label>
 106          <label class="field" for="sim-ldr">
-107            <span class="field-head"><span>Światło na fotorezystorze (ADC1)</span><output id="sim-ldr-out">–</output></span>
+107            <span class="field-head"><span>Światło na fotorezystorze (PA1)</span><output id="sim-ldr-out">–</output></span>
 108            <input id="sim-ldr" type="range" min="0" max="1023" value="500">
 109          </label>
 110          <label class="field" for="sim-temp">
-111            <span class="field-head"><span>Temperatura czujnika (ADC2)</span><output id="sim-temp-out">–</output></span>
+111            <span class="field-head"><span>Temperatura czujnika DS18B20</span><output id="sim-temp-out">–</output></span>
 112            <input id="sim-temp" type="range" min="0" max="80" step="0.5" value="22">
 113          </label>
 ```
@@ -276,7 +276,7 @@ Widoczna tylko w trybie symulacji. Zastępuje prawdziwe elementy na płytce.
 
 ```html
 114          <div class="buttons buttons-wrap">
-115            <button class="btn btn-small" type="button" data-sim-button="short">Przycisk PD2</button>
+115            <button class="btn btn-small" type="button" data-sim-button="short">Przycisk K1 (PD2)</button>
 116            <button class="btn btn-small" type="button" data-sim-button="long">Przytrzymaj 1 s (tryb)</button>
 117            <button class="btn btn-small btn-ghost" type="button" id="sim-reset">Reset MCU</button>
 118            <button class="btn btn-small btn-ghost" type="button" id="sim-power">Zanik zasilania</button>
