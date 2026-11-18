@@ -76,7 +76,7 @@ Realizujemy **wariant zaawansowany**. Oprócz wymaganego włączania i wyłącza
 flowchart LR
     U["Przeglądarka<br/>(PC / telefon w LAN)"] -- "HTTP :5000<br/>strona, API JSON, SSE" --> S["Raspberry Pi 4/5<br/>Python + Flask + pyserial"]
     S -- USB --> K["Płytka ATB 1.05<br/>FT232RL (USB-UART)"]
-    K -- "UART 9600 bps 8N1" --> M["ATmega32A<br/>1 MHz (RC) lub 11,0592 MHz"]
+    K -- "UART 9600 bps 8N1" --> M["ATmega32A<br/>11,0592 MHz (kwarc)"]
     M -- "PWM (PD5)" --> L["Dioda LED8"]
     M -- "PC0" --> ST["Dioda statusu LED1"]
     B["Przycisk K1 (PD2)"] --> M
@@ -211,7 +211,7 @@ make flash-demo    # wgranie programu demonstracyjnego do ATmega8
 ```
 
 - Na płytce ATB programator USBasp i port szeregowy są dostępne przez to samo gniazdo USB-B. Przed pierwszym wgraniem trzeba założyć przewody i zworki z [docs/sprzet.md](docs/sprzet.md), rozdz. 3.
-- Domyślnie firmware jest budowany dla zegara 1 MHz (fabryczny RC). Jeśli `make read-fuses` pokaże zegar z kwarcu 11,0592 MHz: `make clean all F_CPU=11059200UL`.
+- Płytka ATB pracuje na kwarcu 11,0592 MHz (fusebity odczytane 18.11.2026), więc wgrywamy ją zawsze poleceniem `make clean flash F_CPU=11059200UL`. Domyślne 1 MHz w Makefile służy symulatorowi i testom.
 - Progi trybu AUTO i alarmu ustawia się w `firmware/include/config.h`, polaryzację diod w `firmware/include/pinout.h`.
 
 - Makefile sam znajduje toolchain z Arduino IDE (Windows, Linux, macOS), a w drugiej kolejności używa narzędzi z `PATH`. Wymuszenie: `make AVR_BIN=C:/sciezka/bin/ AVRDUDE=C:/sciezka/avrdude.exe`.

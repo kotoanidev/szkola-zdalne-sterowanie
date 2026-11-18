@@ -31,7 +31,7 @@ W dokumentach brakujące dane oznaczaj `[DO UZUPEŁNIENIA]`. Otwarte kwestie są
 
 ## Bezpieczeństwo sprzętu
 
-- **Nigdy nie zapisuj fusebitów ani lock bitów** bez wyraźnej zgody użytkownika w czacie. Makefile celowo ma tylko `make read-fuses`. Taktowanie wynika z obecnych fusebitów: domyślnie 1 MHz (RC), przy kwarcu ATB `make clean all F_CPU=11059200UL`.
+- **Nigdy nie zapisuj fusebitów ani lock bitów** bez wyraźnej zgody użytkownika w czacie. Makefile celowo ma tylko `make read-fuses`. Płytka ATB pracuje na kwarcu 11,0592 MHz (lfuse `0xFF`, hfuse `0xDF`, odczyt 18.11.2026), więc wgrywamy ją **zawsze** poleceniem `make clean flash F_CPU=11059200UL`. Domyślne 1 MHz w Makefile służy symulatorowi i testom.
 - `make flash` i `make check` uruchamiaj tylko na prośbę użytkownika, bo układ może być akurat przebudowywany.
 - Układ zasilamy z jednego źródła 5 V (na ATB: z kabla USB). GPIO Raspberry Pi nie łączymy bezpośrednio z mikrokontrolerem.
 
