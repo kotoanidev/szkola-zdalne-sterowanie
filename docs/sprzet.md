@@ -7,13 +7,13 @@
 
 | Element | Ilość | Uwagi |
 |---|---|---|
-| ATmega8 (DIP-28) | 1 | wersja 8 / 8A / 8L – **do ustalenia**; pracuje na fabrycznym RC 1 MHz |
+| ATmega8A (DIP-28) | 1 | pracuje na fabrycznym RC 1 MHz |
 | Programator USBasp + taśma ISP | 1 | 10-pin lub 6-pin |
 | Konwerter USB-UART | 1 | dowolny z dostępnych (CH340 / CP2102 / FT232RL / PL2303) – patrz rozdz. 4 |
 | Raspberry Pi 4 lub 5 + zasilacz + microSD | 1 | model – **do ustalenia**, system Raspberry Pi OS |
 | Płytka stykowa + przewody | 1 | |
-| Dioda LED (kanał główny) + rezystor 330 Ω | 1 | wyjście PWM |
-| Dioda LED (status) + rezystor 330 Ω | 1 | sygnalizacja pracy / komunikacji |
+| Dioda LED (kanał główny) + rezystor 1 kΩ | 1 | wyjście PWM |
+| Dioda LED (status) + rezystor 1 kΩ | 1 | sygnalizacja pracy / komunikacji |
 | Przycisk (tact switch) | 1 | do GND, wewnętrzny pull-up |
 | Potencjometr 10 kΩ | 1 | lokalna regulacja jasności (ADC0) |
 | Fotorezystor + rezystor 10 kΩ | 1 | tryb AUTO (ADC1): fotorezystor od +5 V do ADC1, 10 kΩ od ADC1 do GND (więcej światła = wyższe napięcie); połączenie odwrotne – `LDR_INVERT 1` w `config.h` |
@@ -33,8 +33,8 @@
 | 5 | PD3 | rezerwa (DS18B20, jeśli wybrany taki czujnik) | – |
 | 7 | VCC | +5 V, 100 nF do GND | 1 |
 | 8, 22 | GND | masa wspólna | 1 |
-| 13 | PD7 | dioda statusu + 330 Ω | 1 |
-| 15 | PB1 / OC1A | dioda główna + 330 Ω (PWM Timer1) | 1 |
+| 13 | PD7 | dioda statusu + 1 kΩ | 1 |
+| 15 | PB1 / OC1A | dioda główna + 1 kΩ (PWM Timer1) | 1 |
 | 17 | PB3 / MOSI | tylko ISP | – |
 | 18 | PB4 / MISO | tylko ISP | – |
 | 19 | PB5 / SCK | tylko ISP | – |
