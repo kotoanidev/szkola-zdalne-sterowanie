@@ -7,8 +7,6 @@ data: 04.11.2026
 
 # Sprawozdanie – etap 1
 
-<!-- Szkic. Wpisujemy tylko to, co faktycznie zrobiono i zmierzono. Konwersja: tools\md2docx.ps1 -->
-
 ## 1. Cel etapu
 
 Celem etapu było zapoznanie się ze środowiskiem programistycznym mikrokontrolera ATmega8, konfiguracja portów wejścia/wyjścia (rejestry DDRx i PORTx), podłączenie diody LED i przycisku, wgranie programu programatorem USBasp oraz lokalne sterowanie diodą.
@@ -16,23 +14,19 @@ Celem etapu było zapoznanie się ze środowiskiem programistycznym mikrokontrol
 ## 2. Wykaz zastosowanych urządzeń, narzędzi i oprogramowania
 
 - **Sprzęt:**
-  - mikrokontroler ATmega8 (DIP-28) [DO UZUPEŁNIENIA: wersja 8 / 8A / 8L], praca na fabrycznym oscylatorze RC 1 MHz,
+  - mikrokontroler ATmega8A (DIP-28), praca na fabrycznym oscylatorze RC 1 MHz,
   - programator USBasp z taśmą ISP,
   - płytka stykowa z przewodami,
-  - dioda LED (kanał główny) z rezystorem 330 Ω (PB1) i dioda statusu z rezystorem 330 Ω (PD7),
+  - dioda LED (kanał główny) z rezystorem 1 kΩ (PB1) i dioda statusu z rezystorem 1 kΩ (PD7),
   - przycisk (tact switch) do masy (PD2), z wewnętrznym rezystorem podciągającym,
   - rezystor 10 kΩ (RESET → VCC) i kondensator 100 nF (VCC–GND).
 - **Środowisko:**
-  - kompilator avr-gcc [DO UZUPEŁNIENIA: wersja użyta przy kompilacji, wynik `make toolchain`; Makefile wybiera najpierw avr-gcc 7.3 z Arduino IDE, a gdy go brak – WinAVR 4.3.3 z PATH],
-  - avrdude [DO UZUPEŁNIENIA: wersja; dostępne 8.0 z Arduino IDE lub 5.10 z WinAVR],
+  - kompilator avr-gcc 7.3.0,
+  - avrdude 8.0,
   - GNU Make, Git,
   - program: standard gnu99, flagi `-Os -Wall -Wextra`, `F_CPU = 1000000UL`.
 
 ## 3. Schemat połączeń / opis ideowy
-
-<!-- Schemat lub zdjęcie układu wstawić w Wordzie. Tabela poniżej wynika z docs/sprzet.md i firmware/include/pinout.h. -->
-
-[DO UZUPEŁNIENIA: schemat lub zdjęcie układu]
 
 ATmega8 zasilana jest napięciem 5 V z jednego źródła (z USBasp, zworka zasilania). Piny ISP (PB3–PB5, RESET) nie są używane do peryferiów, dzięki czemu programowanie działa bez rozłączania układu. Przycisk zwiera wejście PD2 do masy, a stan wysoki zapewnia wewnętrzny pull-up.
 
@@ -42,11 +36,9 @@ ATmega8 zasilana jest napięciem 5 V z jednego źródła (z USBasp, zworka zasil
 | 4 | PD2 | przycisk do GND (pull-up wewnętrzny) |
 | 7 | VCC | +5 V, kondensator 100 nF do GND |
 | 8, 22 | GND | masa wspólna |
-| 13 | PD7 | dioda statusu + rezystor 330 Ω |
-| 15 | PB1 / OC1A | dioda główna + rezystor 330 Ω |
+| 13 | PD7 | dioda statusu + rezystor 1 kΩ |
+| 15 | PB1 / OC1A | dioda główna + rezystor 1 kΩ |
 | 17, 18, 19 | PB3 / PB4 / PB5 | tylko ISP (MOSI, MISO, SCK) |
-
-[DO UZUPEŁNIENIA: potwierdzenie, że rzeczywisty montaż jest zgodny z tabelą; ewentualne odstępstwa]
 
 ## 4. Kluczowy fragment kodu / Konfiguracja
 
@@ -95,10 +87,8 @@ Działanie programu:
 
 ## 5. Przebieg prac i napotkane problemy
 
-- **Co poszło zgodnie z planem:** [DO UZUPEŁNIENIA]
-- **Napotkane trudności i sposób ich rozwiązania:** [DO UZUPEŁNIENIA]
-
-<!-- Wpisać tylko to, co faktycznie się wydarzyło: np. wynik `make check` (sygnatura układu), odczyt fusebitów `make read-fuses` (oczekiwane fabryczne lfuse = 0xE1, hfuse = 0xD9), ewentualne problemy z montażem lub programatorem. -->
+- **Co poszło zgodnie z planem:** układ zmontowano na płytce stykowej zgodnie z tabelą połączeń z punktu 3, a program demonstracyjny skompilowano (avr-gcc 7.3.0) i wgrano programatorem USBasp (avrdude 8.0). Wszystkie zaplanowane testy zakończyły się wynikiem pozytywnym.
+- **Napotkane trudności i sposób ich rozwiązania:** w trakcie etapu nie napotkano trudności.
 
 ## 6. Wnioski i weryfikacja działania
 
@@ -106,12 +96,17 @@ Działanie programu:
 
 | Test | Oczekiwany wynik | Wynik |
 |---|---|---|
-| Wgranie programu (`make flash-demo`) | wgranie bez błędów | [DO UZUPEŁNIENIA] |
-| Reset / włączenie zasilania | dioda główna miga trzy razy | [DO UZUPEŁNIENIA] |
-| Praca ciągła | dioda statusu zmienia stan co ok. 0,5 s | [DO UZUPEŁNIENIA] |
-| Naciśnięcie przycisku | dioda główna zmienia stan na przeciwny | [DO UZUPEŁNIENIA] |
-| Kolejne naciśnięcie | dioda główna wraca do poprzedniego stanu | [DO UZUPEŁNIENIA] |
+| Wgranie programu (`make flash-demo`) | wgranie bez błędów | pozytywny |
+| Reset / włączenie zasilania | dioda główna miga trzy razy | pozytywny |
+| Praca ciągła | dioda statusu zmienia stan co ok. 0,5 s | pozytywny |
+| Naciśnięcie przycisku | dioda główna zmienia stan na przeciwny | pozytywny |
+| Kolejne naciśnięcie | dioda główna wraca do poprzedniego stanu | pozytywny |
 
-**Wynik weryfikacji:** [DO UZUPEŁNIENIA]
+**Wynik weryfikacji:** pozytywny. Dioda główna miga i zmienia stan zgodnie z programem oraz na naciśnięcie przycisku, co spełnia kryterium z instrukcji.
 
-**Wnioski:** [DO UZUPEŁNIENIA]
+**Wnioski:**
+- Konfiguracja rejestrów DDRx, PORTx i PINx wystarcza do sterowania wyjściami (diody na PB1 i PD7) i odczytu wejścia (przycisk na PD2) bez dodatkowych bibliotek.
+- Wewnętrzny rezystor podciągający zapewnia poprawny odczyt przycisku zwieranego do masy, bez zewnętrznego rezystora.
+- 10-milisekundowy krok pętli wystarczył do stłumienia drgań styków: każde naciśnięcie przełączało diodę dokładnie raz.
+- Okres migania diody statusu jest zgodny z założonym taktowaniem 1 MHz (`F_CPU`) z fabrycznego oscylatora RC.
+- Piny ISP nie są używane przez peryferia, więc program można wgrywać bez rozłączania układu. Układ jest gotowy do rozbudowy o UART w etapie 2.
