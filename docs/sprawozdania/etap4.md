@@ -46,7 +46,7 @@ Celem etapu było stworzenie czytelnej strony WWW do sterowania urządzeniem (W�
 
 | Pomiar | Warunki | Wynik |
 |---|---|---|
-| Napięcie zasilania ATmega8 | praca normalna | [DO UZUPEŁNIENIA] |
+| Napięcie zasilania ATmega32A (płytka ATB) | praca normalna | [DO UZUPEŁNIENIA] |
 | Prąd diody głównej | PWM 0 % | [DO UZUPEŁNIENIA] |
 | Prąd diody głównej | PWM 50 % | [DO UZUPEŁNIENIA] |
 | Prąd diody głównej | PWM 100 % | [DO UZUPEŁNIENIA] |

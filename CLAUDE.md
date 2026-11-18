@@ -1,6 +1,6 @@
 # CLAUDE.md – zasady pracy w repozytorium
 
-Projekt szkolny (Pracownia Urządzeń Techniki Komputerowej): **zdalny system sterowania urządzeniem niskonapięciowym przez sieć LAN**. Łańcuch: przeglądarka → Flask na Raspberry Pi → konwerter USB-UART → ATmega8 → LED (PWM), przycisk, potencjometr, fotorezystor, czujnik temperatury. Realizujemy wariant zaawansowany: rozszerzenia R1–R11 opisane w `docs/PLAN_PROJEKTU.md`.
+Projekt szkolny (Pracownia Urządzeń Techniki Komputerowej): **zdalny system sterowania urządzeniem niskonapięciowym przez sieć LAN**. Łańcuch: przeglądarka → Flask na Raspberry Pi → płytka ATNEL ATB 1.05 (wbudowany FT232RL + ATmega32A) → LED (PWM), przycisk, potencjometr, fotorezystor, czujnik DS18B20. Etap 1 był na ATmega8 na płytce stykowej i zostaje bez zmian; od etapu 2 wszystko jest na ATB. Realizujemy wariant zaawansowany: rozszerzenia R1–R11 opisane w `docs/PLAN_PROJEKTU.md`.
 
 Zespół:
 - **Mikołaj Milcarz** – implementacja całości (firmware, serwer, front-end, montaż),
@@ -21,7 +21,7 @@ Zespół:
 ## Zasada nr 1: nie zgaduj, tylko pytaj
 
 Jeśli czegoś nie wiesz, zatrzymaj się i zapytaj użytkownika. Dotyczy to zwłaszcza:
-- parametrów sprzętu: typu czujnika temperatury, wersji ATmega8, modelu konwertera i Raspberry Pi,
+- parametrów sprzętu: fusebitów i taktowania ATmega32A, polaryzacji diod i stanu zworek płytki ATB, modelu Raspberry Pi,
 - przypisania pinów innego niż w `docs/sprzet.md`,
 - adresów IP, nazw i zasad sieci szkolnej,
 - terminów i wymagań prowadzącego,
@@ -31,9 +31,9 @@ W dokumentach brakujące dane oznaczaj `[DO UZUPEŁNIENIA]`. Otwarte kwestie są
 
 ## Bezpieczeństwo sprzętu
 
-- **Nigdy nie zapisuj fusebitów ani lock bitów** bez wyraźnej zgody użytkownika w czacie. Makefile celowo ma tylko `make read-fuses`. Taktowanie to fabryczne 1 MHz (RC) – tak zostaje.
+- **Nigdy nie zapisuj fusebitów ani lock bitów** bez wyraźnej zgody użytkownika w czacie. Makefile celowo ma tylko `make read-fuses`. Taktowanie wynika z obecnych fusebitów: domyślnie 1 MHz (RC), przy kwarcu ATB `make clean all F_CPU=11059200UL`.
 - `make flash` i `make check` uruchamiaj tylko na prośbę użytkownika, bo układ może być akurat przebudowywany.
-- Układ zasilamy z jednego źródła 5 V. GPIO Raspberry Pi nie łączymy bezpośrednio z ATmega8.
+- Układ zasilamy z jednego źródła 5 V (na ATB: z kabla USB). GPIO Raspberry Pi nie łączymy bezpośrednio z mikrokontrolerem.
 
 ## Komputer szkolny – zero śladów
 
@@ -54,11 +54,12 @@ Ogólne:
 
 Firmware (`firmware/`, C):
 - kompilacja **bez ostrzeżeń** (`-Wall -Wextra`) na avr-gcc 7.3 (Arduino IDE) **i** WinAVR 4.3.3: standard gnu99, bez cech C11 (np. `_Static_assert`),
-- `F_CPU` definiuje tylko Makefile (1 MHz),
-- piny wyłącznie według `docs/sprzet.md`, zdefiniowane w jednym miejscu (`firmware/include/pinout.h`, od etapu 1); zmiana pinu = zmiana obu plików,
-- zmienne współdzielone z przerwaniami są `volatile`, a wielobajtowe czytamy w `ATOMIC_BLOCK`; w przerwaniach żadnych opóźnień, w pętli głównej żadnych blokujących opóźnień (wyjątek: demonstracja w etapie 1),
-- obliczenia całkowitoliczbowe, bez `printf` z float (8 KB flash, 1 KB RAM),
-- kod dzielimy na moduły według peryferiów (UART, PWM, ADC, przycisk, protokół).
+- `F_CPU` definiuje tylko Makefile (domyślnie 1 MHz; kod działa też przy 11,0592 MHz),
+- piny wyłącznie według `docs/sprzet.md`, zdefiniowane w jednym miejscu (`firmware/include/pinout.h`); zmiana pinu = zmiana `docs/sprzet.md`, `pinout.h` i `sim/avrsim.c`,
+- etap 1 jest zamrożony: `firmware/demo/etap1.c` i jego piny ATmega8 (`firmware/demo/pinout.h`) nie zmieniamy,
+- zmienne współdzielone z przerwaniami są `volatile`, a wielobajtowe czytamy w `ATOMIC_BLOCK`; w przerwaniach żadnych opóźnień, w pętli głównej żadnych blokujących opóźnień (wyjątki: demonstracja w etapie 1 oraz mikrosekundowe czasy 1-Wire – co najwyżej reset albo jeden bajt na takt 1 ms),
+- obliczenia całkowitoliczbowe, bez `printf` z float (ATmega32A: 32 KB flash, 2 KB RAM),
+- kod dzielimy na moduły według peryferiów (UART, PWM, ADC, DS18B20, przycisk, protokół).
 
 Protokół: `docs/protokol.md` to jedyne źródło prawdy. Zmiana protokołu oznacza zmianę firmware, serwera, testów i dokumentu w jednym commicie.
 
@@ -100,7 +101,7 @@ make flash       # wgranie przez USBasp
 make check       # test programatora (sygnatura)
 make read-fuses  # odczyt fusebitów (tylko odczyt)
 make toolchain   # który avr-gcc / avrdude jest używany
-make demo        # program demonstracyjny etapu 1 (make flash-demo – wgranie)
+make demo        # program demonstracyjny etapu 1 dla ATmega8 (make flash-demo – wgranie)
 
 cd server
 .venv/bin/python -m pytest          # testy (firmware w simavr tylko po make -C sim)

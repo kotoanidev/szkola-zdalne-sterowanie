@@ -16,14 +16,14 @@ Celem etapu było uruchomienie serwera sieciowego na Raspberry Pi (Python, Flask
 ## 2. Wykaz zastosowanych urządzeń, narzędzi i oprogramowania
 
 - **Sprzęt:**
-  - układ z etapów 1–2, konwerter USB-UART
+  - płytka ATB 1.05 z ATmega32A i wbudowanym konwerterem USB-UART FT232RL (układ z etapu 2)
   - Raspberry Pi [DO UZUPEŁNIENIA: model], karta microSD, zasilacz
 - **Środowisko:**
   - Raspberry Pi OS [DO UZUPEŁNIENIA: wersja], Python [DO UZUPEŁNIENIA: wersja], Flask, pyserial
 
 ## 3. Schemat połączeń / opis ideowy
 
-<!-- Raspberry Pi (USB) -> konwerter USB-UART -> ATmega8; schemat sieci: komputer ucznia -> LAN -> Raspberry Pi :5000. -->
+<!-- Raspberry Pi (USB) -> FT232RL na płytce ATB -> ATmega32A; schemat sieci: komputer ucznia -> LAN -> Raspberry Pi :5000. -->
 
 [DO UZUPEŁNIENIA]
 

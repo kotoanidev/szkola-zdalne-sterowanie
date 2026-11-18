@@ -85,7 +85,6 @@ Każdy dokument pokazuje prawdziwy kod z numerami linii, a pod nim objaśnia ka�
 |---|---|---|
 | [github-tymczasowo](70-narzedzia-github-tymczasowo.md) | `tools/github-tymczasowo.ps1` | logowanie do GitHuba bez śladów |
 | [md2docx](71-narzedzia-md2docx.md) | `tools/md2docx.ps1` | zamiana Markdowna na Worda |
-| [ntc_table](72-narzedzia-ntc-table.md) | `tools/ntc_table.py` | tabela dla czujnika NTC |
 | [Konfiguracja](80-repo-konfiguracja.md) | `.editorconfig`, `.gitattributes`, `.gitignore` | ustawienia edytorów i gita |
 
 ## Co obejmuje ten opis

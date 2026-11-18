@@ -1,7 +1,7 @@
 ---
 zespol: Mikołaj Milcarz, Wiktor Selwon
 etap: 2
-nazwa: Komunikacja szeregowa (UART w ATmega8)
+nazwa: Komunikacja szeregowa (UART w ATmega32A na płytce ATB 1.05)
 data: 18.11.2026
 ---
 
@@ -11,49 +11,53 @@ data: 18.11.2026
 
 ## 1. Cel etapu
 
-Celem etapu była konfiguracja interfejsu UART w mikrokontrolerze ATmega8 i nawiązanie dwukierunkowej komunikacji tekstowej z komputerem przez konwerter USB-UART, tak aby mikrokontroler reagował na komendy wysyłane z terminala (np. `1` – włącz, `0` – wyłącz).
+Celem etapu była konfiguracja interfejsu UART mikrokontrolera i nawiązanie dwukierunkowej komunikacji tekstowej z komputerem przez konwerter USB-UART, tak aby mikrokontroler reagował na komendy wysyłane z terminala (np. `1` – włącz, `0` – wyłącz).
+
+Od tego etapu układ działa na płytce uruchomieniowej ATNEL ATB 1.05 z mikrokontrolerem ATmega32A zamiast ATmega8 na płytce stykowej z etapu 1. Płytka ma wbudowany konwerter USB-UART i programator, więc jeden kabel USB zasila układ, wgrywa program i przenosi komunikację szeregową. Rejestry UART, Timer1, Timer2, ADC i watchdoga mają w ATmega32A te same nazwy co w ATmega8, więc przeniesienie programu polegało głównie na zmianie pinów.
 
 ## 2. Wykaz zastosowanych urządzeń, narzędzi i oprogramowania
 
 - **Sprzęt:**
-  - układ z etapu 1 (ATmega8, USBasp, dioda główna PB1, dioda statusu PD7, przycisk PD2),
-  - konwerter USB-UART [DO UZUPEŁNIENIA: model / układ (CH340, CP2102, FT232RL, PL2303), tryb 5 V lub 3,3 V],
-  - potencjometr 10 kΩ (ADC0), fotorezystor z rezystorem 10 kΩ (ADC1), czujnik temperatury [DO UZUPEŁNIENIA: LM35 / NTC] (ADC2),
-  - kondensatory 100 nF na AVCC i AREF.
+  - płytka uruchomieniowa ATNEL ATB rev 1.05 z mikrokontrolerem ATmega32A-PU (DIP-40),
+  - konwerter USB-UART FT232RL i programator USBasp wbudowane w płytkę (wspólne gniazdo USB-B),
+  - na płytce: diody LED1 i LED8, przycisk K1, potencjometr P1 (20 kΩ), czujnik temperatury DS18B20 (1-Wire),
+  - fotorezystor z rezystorem 10 kΩ [DO UZUPEŁNIENIA: czy dołożony],
+  - przewody połączeniowe.
 - **Środowisko:**
-  - avr-gcc, avrdude, GNU Make (jak w etapie 1), program główny `firmware/` (`make`, `make flash`), wersja firmware 0.9.0,
+  - avr-gcc, avrdude, GNU Make [DO UZUPEŁNIENIA: wersje z `make toolchain`], program główny `firmware/` (`make`, `make flash`), wersja firmware 0.10.0,
   - terminal szeregowy [DO UZUPEŁNIENIA: np. Serial Monitor z Arduino IDE],
-  - parametry transmisji: 9600 bps, 8N1, bez kontroli przepływu; U2X = 1, UBRR = 12 (przy F_CPU = 1 MHz daje 9615 bps, błąd +0,16 %).
+  - parametry transmisji: 9600 bps, 8N1, bez kontroli przepływu, U2X = 1,
+  - zegar mikrokontrolera: [DO UZUPEŁNIENIA: wynik `make read-fuses`; 1 MHz z RC (UBRR = 12, błąd +0,16 %) albo kwarc 11,0592 MHz (UBRR = 143, bez błędu)].
 
 <!-- Serial Monitor: dla znaków 1 / 0 wystarczy dowolne zakończenie linii; komendy tekstowe (PING, GET...) wymagają ustawienia „Nowa linia” (Newline). -->
 
 ## 3. Schemat połączeń / opis ideowy
 
-<!-- Schemat lub zdjęcie układu wstawić w Wordzie. Tabela poniżej wynika z docs/sprzet.md i firmware/include/pinout.h. -->
+<!-- Zdjęcie płytki z połączeniami wstawić w Wordzie. Tabela wynika z docs/sprzet.md i firmware/include/pinout.h. -->
 
-[DO UZUPEŁNIENIA: schemat lub zdjęcie układu]
+[DO UZUPEŁNIENIA: zdjęcie płytki po wykonaniu połączeń]
 
-Do układu z etapu 1 dołączono konwerter USB-UART. Linie danych łączy się na krzyż: wyjście TXD konwertera do wejścia RXD mikrokontrolera i odwrotnie. Masa jest wspólna. Układ zasilany jest z jednego źródła 5 V (z USBasp albo z konwertera, nigdy z obu jednocześnie).
+Komputer łączy się z płytką jednym kablem USB. Układ FT232RL na płytce zamienia USB na UART i jest połączony z wyprowadzeniami RXD (PD0) i TXD (PD1) mikrokontrolera przez zworki JP7 i JP6. Zworka VCCIO jest w pozycji TTL, więc linie UART mają poziom 5 V. Pozostałe elementy płytki łączy się z mikrokontrolerem zworkami albo przewodami:
 
-| Pin | Port / funkcja | Podłączenie |
+| Pin ATmega32A | Funkcja | Połączenie na płytce ATB |
 |---|---|---|
-| 2 | PD0 / RXD | ← TXD konwertera USB-UART |
-| 3 | PD1 / TXD | → RXD konwertera USB-UART |
-| 8, 22 | GND | ↔ GND konwertera (masa wspólna) |
-| 20 | AVCC | +5 V, 100 nF do GND |
-| 21 | AREF | 100 nF do GND (odniesienie ADC = AVCC) |
-| 23 | PC0 / ADC0 | suwak potencjometru |
-| 24 | PC1 / ADC1 | dzielnik z fotorezystorem |
-| 25 | PC2 / ADC2 | czujnik temperatury |
+| PD0 / RXD | odbiór UART | TXD FT232RL, zworka JP7 |
+| PD1 / TXD | nadawanie UART | RXD FT232RL, zworka JP6 |
+| PD5 / OC1A | dioda główna (PWM) | przewód do LED8, zworka J25 przy PC7 zdjęta |
+| PC0 | dioda statusu | LED1, zworka J25 |
+| PD2 | przycisk | przewód z J26 KEY1 (K1) |
+| PA0 / ADC0 | potencjometr | przewód z pinu POT, zworka J30 nr 0 zdjęta |
+| PA1 / ADC1 | fotorezystor | dzielnik poza płytką, zworka J30 nr 1 zdjęta |
+| PD3 | czujnik DS18B20 | przewód z pinu 1Wire |
 
-[DO UZUPEŁNIENIA: potwierdzenie, że rzeczywisty montaż jest zgodny z tabelą; źródło zasilania; ewentualne odstępstwa]
+[DO UZUPEŁNIENIA: potwierdzenie, że połączenia na płytce są zgodne z tabelą; ewentualne odstępstwa]
 
 ## 4. Kluczowy fragment kodu / Konfiguracja
 
-Inicjalizacja i odbiór UART (`firmware/src/uart.c`). Odbiór działa na przerwaniach: każdy znak trafia do bufora kołowego, a pętla główna odczytuje go funkcją `uart_read()`.
+Inicjalizacja i odbiór UART (`firmware/src/uart.c`). Wartość UBRR liczy się z `F_CPU` podanego w Makefile. Odbiór działa na przerwaniach: każdy znak trafia do bufora kołowego, a pętla główna odczytuje go funkcją `uart_read()`.
 
 ```c
-#define UBRR_VALUE ((F_CPU + 4 * UART_BAUD) / (8 * UART_BAUD) - 1)  // = 12
+#define UBRR_VALUE ((F_CPU + 4 * UART_BAUD) / (8 * UART_BAUD) - 1)  // 12 przy 1 MHz
 
 void uart_init(void)
 {
@@ -89,7 +93,7 @@ if (len == 0 && !too_long && (c == '1' || c == '0')) {
 
 Rozszerzenia zrealizowane w etapie 2 (opis w `docs/protokol.md`):
 - **R3** – odbiór i nadawanie na przerwaniach z buforami kołowymi, komendy tekstowe (`PING`, `VER`, `ON`, `OFF`, `TOGGLE`, `PWM`, `MODE`, `TLIM`, `GET`), jedna linia odpowiedzi na komendę, zdarzenia `EVT` (start, przycisk, potencjometr, alarm temperatury),
-- **R4** – pomiary ADC (potencjometr, fotorezystor, temperatura, średnia z 16 próbek) zwracane komendą `GET`,
+- **R4** – pomiary ADC (potencjometr, fotorezystor, średnia z 16 próbek) oraz temperatura z czujnika DS18B20 (1-Wire, pomiar co 1 s, suma kontrolna CRC; `temp=ERR` przy braku odczytu), zwracane komendą `GET`,
 - **R6** – watchdog (500 ms) oraz zapis stanu w EEPROM 2 s po ostatniej zmianie i przywrócenie go po restarcie.
 
 ## 5. Przebieg prac i napotkane problemy
@@ -97,7 +101,7 @@ Rozszerzenia zrealizowane w etapie 2 (opis w `docs/protokol.md`):
 - **Co poszło zgodnie z planem:** [DO UZUPEŁNIENIA]
 - **Napotkane trudności i sposób ich rozwiązania:** [DO UZUPEŁNIENIA]
 
-<!-- Wpisać tylko to, co faktycznie się wydarzyło, np. „krzaki” w terminalu (wtedy korekta OSCCAL, bez zmiany fusebitów), zamienione linie TX/RX, problemy ze sterownikiem konwertera. -->
+<!-- Wpisać tylko to, co faktycznie się wydarzyło, np. wynik make check i make read-fuses, polaryzacja diod, „krzaki” w terminalu (zły F_CPU), temp=ERR (połączenie 1Wire). -->
 
 ## 6. Wnioski i weryfikacja działania
 
@@ -105,18 +109,18 @@ Rozszerzenia zrealizowane w etapie 2 (opis w `docs/protokol.md`):
 
 | Wysłano | Oczekiwana reakcja | Wynik |
 |---|---|---|
-| (włączenie zasilania) | `EVT BOOT reset=POR ver=0.9.0` | [DO UZUPEŁNIENIA] |
-| `1` | dioda włączona, odpowiedź `OK on=1` | [DO UZUPEŁNIENIA] |
-| `0` | dioda wyłączona, odpowiedź `OK on=0` | [DO UZUPEŁNIENIA] |
+| (podłączenie USB / reset) | `EVT BOOT reset=... ver=0.10.0` | [DO UZUPEŁNIENIA] |
+| `1` | dioda LED8 włączona, odpowiedź `OK on=1` | [DO UZUPEŁNIENIA] |
+| `0` | dioda LED8 wyłączona, odpowiedź `OK on=0` | [DO UZUPEŁNIENIA] |
 | `PING` | `PONG` | [DO UZUPEŁNIENIA] |
-| `VER` | `VER 0.9.0` | [DO UZUPEŁNIENIA] |
+| `VER` | `VER 0.10.0` | [DO UZUPEŁNIENIA] |
 | `ON`, potem `PWM 30` | jasność płynnie zmienia się na 30 %, `OK pwm=30` | [DO UZUPEŁNIENIA] |
-| `GET` | linia `STATE on=... pwm=... pot=... ldr=... temp=...` | [DO UZUPEŁNIENIA] |
-| obrót potencjometru | `EVT POT pwm=...`, zmiana jasności | [DO UZUPEŁNIENIA] |
-| naciśnięcie przycisku | `EVT BTN on=...`, zmiana stanu diody | [DO UZUPEŁNIENIA] |
+| `GET` | linia `STATE on=... pwm=... pot=... ldr=... temp=...` z temperaturą z DS18B20 | [DO UZUPEŁNIENIA] |
+| obrót potencjometru P1 | `EVT POT pwm=...`, zmiana jasności | [DO UZUPEŁNIENIA] |
+| naciśnięcie K1 | `EVT BTN on=...`, zmiana stanu diody | [DO UZUPEŁNIENIA] |
 | `ABC` | `ERR UNKNOWN` | [DO UZUPEŁNIENIA] |
 | `PWM 150` | `ERR ARG` | [DO UZUPEŁNIENIA] |
-| `PWM 60`, odczekać 2 s, wyłączyć i włączyć zasilanie, `GET` | `EVT BOOT reset=POR ...`, w `STATE` `pwm=60` (stan z EEPROM) | [DO UZUPEŁNIENIA] |
+| `PWM 60`, odczekać 2 s, odłączyć i podłączyć USB, `GET` | `EVT BOOT reset=POR ...`, w `STATE` `pwm=60` (stan z EEPROM) | [DO UZUPEŁNIENIA] |
 
 **Wynik weryfikacji:** [DO UZUPEŁNIENIA]
 

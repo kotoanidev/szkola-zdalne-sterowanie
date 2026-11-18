@@ -1,11 +1,11 @@
 # Zdalne sterowanie urządzeniem niskonapięciowym przez sieć LAN
 
-**ATmega8 + Raspberry Pi + Flask** – inteligentne oświetlenie LED sterowane z przeglądarki w szkolnej sieci LAN.
+**ATmega32A (płytka ATB 1.05) + Raspberry Pi + Flask** – inteligentne oświetlenie LED sterowane z przeglądarki w szkolnej sieci LAN.
 Projekt zespołowy z przedmiotu *Pracownia Urządzeń Techniki Komputerowej*.
 
-![MCU](https://img.shields.io/badge/MCU-ATmega8%20%40%201%20MHz-1f6feb)
+![MCU](https://img.shields.io/badge/MCU-ATmega32A%20(ATB%201.05)-1f6feb)
 ![Serwer](https://img.shields.io/badge/serwer-Raspberry%20Pi%20%2B%20Flask-c51a4a)
-![Status](https://img.shields.io/badge/status-etap%201%20w%20toku-yellow)
+![Status](https://img.shields.io/badge/status-etap%202%20w%20toku-yellow)
 ![Licencja](https://img.shields.io/badge/licencja-wszelkie%20prawa%20zastrze%C5%BCone-lightgrey)
 
 > Repozytorium jest publiczne wyłącznie do wglądu. Kopiowanie i wykorzystywanie kodu bez zgody autorów jest zabronione – patrz [LICENSE](LICENSE).
@@ -33,7 +33,9 @@ Projekt zespołowy z przedmiotu *Pracownia Urządzeń Techniki Komputerowej*.
 
 ## O projekcie
 
-**Temat:** Zdalny system sterowania urządzeniem niskonapięciowym przez sieć LAN (mikrokontroler ATmega8 + serwer WWW na Raspberry Pi).
+**Temat:** Zdalny system sterowania urządzeniem niskonapięciowym przez sieć LAN (mikrokontroler AVR + serwer WWW na Raspberry Pi).
+
+**Sprzęt:** etap 1 – ATmega8 na płytce stykowej; od etapu 2 – płytka uruchomieniowa ATNEL ATB 1.05 z ATmega32A, wbudowanym konwerterem USB-UART (FT232RL) i programatorem USBasp.
 
 **Cel:** zaprojektować, uruchomić i przetestować układ zdalnego sterowania z poziomu przeglądarki internetowej w szkolnej sieci LAN.
 
@@ -44,7 +46,7 @@ Realizujemy **wariant zaawansowany**. Oprócz wymaganego włączania i wyłącza
 - mierzy temperaturę i alarmuje po przekroczeniu progu,
 - pokazuje stan na żywo (Server-Sent Events) na komputerze i telefonie,
 - po zaniku zasilania sam wraca do ostatniego stanu (EEPROM, watchdog),
-- automatycznie wykrywa konwerter USB-UART i łączy się ponownie po jego odłączeniu.
+- automatycznie wykrywa konwerter USB-UART (FT232RL na płytce) i łączy się ponownie po jego odłączeniu.
 
 ## Funkcje
 
@@ -57,7 +59,7 @@ Realizujemy **wariant zaawansowany**. Oprócz wymaganego włączania i wyłącza
 | R1 | PWM jasności z płynnym przejściem (Timer1) | 1 | 🧪 kod gotowy |
 | R2 | Programowy debouncing przycisku (takt 1 ms, Timer2) | 1 | 🧪 kod gotowy |
 | R3 | UART na przerwaniach, bufor kołowy, komendy, odpowiedzi i zdarzenia | 2 | 🧪 kod gotowy |
-| R4 | Pomiary ADC: potencjometr, fotorezystor, temperatura | 2 | 🧪 kod gotowy |
+| R4 | Pomiary: potencjometr, fotorezystor (ADC), temperatura (DS18B20) | 2 | 🧪 kod gotowy |
 | R5 | Tryb AUTO (jasność według oświetlenia) | 4 | 🧪 kod gotowy |
 | R6 | Watchdog i przywracanie stanu z EEPROM | 2 | 🧪 kod gotowy |
 | R7 | Wykrywanie konwertera, ponowne łączenie, API JSON | 3 | 🧪 kod gotowy |
@@ -73,12 +75,13 @@ Realizujemy **wariant zaawansowany**. Oprócz wymaganego włączania i wyłącza
 ```mermaid
 flowchart LR
     U["Przeglądarka<br/>(PC / telefon w LAN)"] -- "HTTP :5000<br/>strona, API JSON, SSE" --> S["Raspberry Pi 4/5<br/>Python + Flask + pyserial"]
-    S -- USB --> K["Konwerter USB-UART<br/>CH340 / CP2102 / FT232 / PL2303"]
-    K -- "UART 9600 bps 8N1" --> M["ATmega8<br/>1 MHz (RC)"]
-    M -- "PWM (PB1)" --> L["Dioda LED"]
-    M -- "PD7" --> ST["Dioda statusu"]
-    B["Przycisk (PD2)"] --> M
-    A["Potencjometr · fotorezystor<br/>czujnik temperatury"] -- "ADC0–2" --> M
+    S -- USB --> K["Płytka ATB 1.05<br/>FT232RL (USB-UART)"]
+    K -- "UART 9600 bps 8N1" --> M["ATmega32A<br/>1 MHz (RC) lub 11,0592 MHz"]
+    M -- "PWM (PD5)" --> L["Dioda LED8"]
+    M -- "PC0" --> ST["Dioda statusu LED1"]
+    B["Przycisk K1 (PD2)"] --> M
+    A["Potencjometr P1 · fotorezystor"] -- "ADC0–1 (PA0–PA1)" --> M
+    T["DS18B20"] -- "1-Wire (PD3)" --> M
 ```
 
 Przepływ zmiany stanu z przeglądarki oraz zmiany lokalnej z przycisku:
@@ -87,7 +90,7 @@ Przepływ zmiany stanu z przeglądarki oraz zmiany lokalnej z przycisku:
 sequenceDiagram
     participant P as Przeglądarka
     participant F as Flask (Raspberry Pi)
-    participant A as ATmega8
+    participant A as ATmega32A
     P->>F: POST /api/state {"pwm": 60}
     F->>A: PWM 60
     A-->>F: OK pwm=60
@@ -110,7 +113,7 @@ sequenceDiagram
 | Etap | Zakres | Termin | Status |
 |---|---|---|---|
 | 1 | Układ bazowy: ATmega8 + GPIO | **04.11.2026** | ⏳ w toku |
-| 2 | Komunikacja szeregowa UART | **18.11.2026** | ⏳ |
+| 2 | Komunikacja szeregowa UART (od tego etapu płytka ATB) | **18.11.2026** | ⏳ w toku |
 | 3 | Mostek sieciowy: Raspberry Pi + Flask | **09.12.2026** | ⏳ |
 | 4 | Interfejs WWW, testy, dokumentacja | **13.01.2027** | ⏳ |
 
@@ -120,14 +123,14 @@ Szczegóły (zadania, przeglądy, ryzyka): [docs/PLAN_PROJEKTU.md](docs/PLAN_PRO
 
 | Element | Rola |
 |---|---|
-| ATmega8 (DIP-28), fabryczne RC 1 MHz | sterownik urządzenia |
-| USBasp | programator ISP |
-| Konwerter USB-UART (dowolny: CH340 / CP2102 / FT232RL / PL2303) | most USB ↔ UART |
+| Płytka ATNEL ATB 1.05 z ATmega32A-PU | sterownik urządzenia (od etapu 2) |
+| FT232RL i USBasp na płytce (jedno gniazdo USB-B) | port szeregowy, programator, zasilanie 5 V |
 | Raspberry Pi 4 lub 5 | serwer WWW w sieci LAN |
-| Dioda LED + 330 Ω (PB1), dioda statusu (PD7), przycisk (PD2) | wykonanie i sterowanie lokalne |
-| Potencjometr 10 kΩ (ADC0), fotorezystor (ADC1), czujnik temperatury (ADC2) | pomiary i tryb AUTO |
+| LED8 (PWM, PD5), LED1 (status, PC0), przycisk K1 (PD2) | wykonanie i sterowanie lokalne |
+| Potencjometr P1 (PA0), fotorezystor dokładany (PA1), DS18B20 (1-Wire, PD3) | pomiary i tryb AUTO |
+| Etap 1: ATmega8 (DIP-28) na płytce stykowej | układ bazowy, bez zmian |
 
-Pełna lista, przypisanie pinów, zasilanie, poziomy logiczne konwerterów i fusebity: **[docs/sprzet.md](docs/sprzet.md)**.
+Przypisanie pinów, zworki i przewody do założenia, zasilanie, fusebity i to, co trzeba jeszcze potwierdzić na płytce: **[docs/sprzet.md](docs/sprzet.md)**.
 
 ## Protokół i API
 
@@ -150,11 +153,11 @@ Pełna specyfikacja: **[docs/protokol.md](docs/protokol.md)**.
 ├── CLAUDE.md                  zasady pracy (także dla asystenta AI)
 ├── README.md
 ├── LICENSE                    wszelkie prawa zastrzeżone
-├── firmware/                  ATmega8 – C, avr-gcc
+├── firmware/                  ATmega32A (płytka ATB) – C, avr-gcc
 │   ├── Makefile               make / flash / demo / check / read-fuses
-│   ├── include/               pinout.h (piny), config.h (czujnik, progi), nagłówki modułów
-│   ├── src/                   main, uart, pwm, adc, button, timer, sensors, state, protocol
-│   └── demo/etap1.c           prosty program demonstracyjny etapu 1 (make demo)
+│   ├── include/               pinout.h (piny ATB), config.h (progi), nagłówki modułów
+│   ├── src/                   main, uart, pwm, adc, ds18b20, button, timer, sensors, state, protocol
+│   └── demo/                  etap1.c + pinout.h – program etapu 1 dla ATmega8 (make demo), bez zmian
 ├── server/                    Raspberry Pi – Flask + pyserial
 │   ├── app/                   serwer: device.py (łącze z MCU), routes.py (API), mcu_sim.py, avrsim.py
 │   │   └── static/            strona WWW (HTML, CSS, JS)
@@ -163,12 +166,12 @@ Pełna specyfikacja: **[docs/protokol.md](docs/protokol.md)**.
 │   ├── requirements.txt
 │   └── requirements-dev.txt   + pytest
 ├── sim/                       symulacja firmware w simavr (tylko Linux)
-│   ├── avrsim.c               firmware.hex + UART na pseudoterminalu + wirtualne czujniki
+│   ├── avrsim.c               firmware.hex na ATmega32 + UART na pseudoterminalu + wirtualne czujniki i DS18B20
 │   └── Makefile               pobiera simavr, buduje avrsim, make run / make test
 ├── docs/
 │   ├── WNIOSEK.md             wniosek o realizację projektu (przed rozpoczęciem prac)
 │   ├── PLAN_PROJEKTU.md/.docx plan, harmonogram, ryzyka
-│   ├── sprzet.md              elementy, piny, zasilanie
+│   ├── sprzet.md              płytka ATB: piny, zworki, przewody, zasilanie; etap 1
 │   ├── protokol.md            protokół UART i API HTTP
 │   ├── dla-specjalisty/       cały kod objaśniony linijka po linijce, od zera
 │   ├── sprawozdania/          sprawozdania z etapów (md → docx)
@@ -176,8 +179,7 @@ Pełna specyfikacja: **[docs/protokol.md](docs/protokol.md)**.
 │   └── materialy/             materiały prowadzącego (tylko lokalnie, poza gitem)
 ├── tools/
 │   ├── md2docx.ps1            Markdown → DOCX na szkolnym szablonie
-│   ├── github-tymczasowo.ps1  GitHub bez śladów na komputerze szkolnym
-│   └── ntc_table.py           tabela przeliczenia NTC dla firmware
+│   └── github-tymczasowo.ps1  GitHub bez śladów na komputerze szkolnym
 └── .github/
     └── pull_request_template.md
 ```
@@ -201,18 +203,21 @@ Na Windows `make` jest m.in. w WinAVR (`utils\bin`). Polecenia uruchamiamy z Pow
 cd firmware
 make toolchain     # sprawdza, który avr-gcc / avrdude zostanie użyty
 make               # kompilacja -> build/firmware.hex + zajętość pamięci
-make check         # USBasp podłączony? odczyt sygnatury ATmega8
+make check         # USBasp podłączony? odczyt sygnatury ATmega32A (1E 95 02)
+make read-fuses    # odczyt fusebitów: od nich zależy zegar (patrz niżej)
 make flash         # wgranie programu
-make demo          # program demonstracyjny etapu 1 (miganie, przycisk) -> build/demo.hex
-make flash-demo    # wgranie programu demonstracyjnego
+make demo          # program demonstracyjny etapu 1 dla ATmega8 -> build/demo.hex
+make flash-demo    # wgranie programu demonstracyjnego do ATmega8
 ```
 
-- Typ czujnika temperatury, napięcie odniesienia ADC, progi trybu AUTO i alarmu ustawia się w `firmware/include/config.h`.
+- Na płytce ATB programator USBasp i port szeregowy są dostępne przez to samo gniazdo USB-B. Przed pierwszym wgraniem trzeba założyć przewody i zworki z [docs/sprzet.md](docs/sprzet.md), rozdz. 3.
+- Domyślnie firmware jest budowany dla zegara 1 MHz (fabryczny RC). Jeśli `make read-fuses` pokaże zegar z kwarcu 11,0592 MHz: `make clean all F_CPU=11059200UL`.
+- Progi trybu AUTO i alarmu ustawia się w `firmware/include/config.h`, polaryzację diod w `firmware/include/pinout.h`.
 
 - Makefile sam znajduje toolchain z Arduino IDE (Windows, Linux, macOS), a w drugiej kolejności używa narzędzi z `PATH`. Wymuszenie: `make AVR_BIN=C:/sciezka/bin/ AVRDUDE=C:/sciezka/avrdude.exe`.
-- Zegar ISP jest ustawiony na ok. 125 kHz (`-B 8`), bo ATmega8 pracuje na 1 MHz.
+- Zegar ISP jest ustawiony na ok. 125 kHz (`-B 8`), bo mikrokontroler może pracować na 1 MHz.
 - USBasp na Windows wymaga sterownika libusb, który instaluje się programem Zadig (potrzebne uprawnienia administratora). Jeśli `make check` nie widzi programatora, problemem jest zwykle sterownik.
-- **Fusebitów nie zapisujemy** – tylko `make read-fuses` (odczyt). Fabryczne: `lfuse 0xE1`, `hfuse 0xD9`.
+- **Fusebitów nie zapisujemy** – tylko `make read-fuses` (odczyt). Fabryczne ATmega32A: `lfuse 0xE1`, `hfuse 0x99`.
 
 ### Serwer na Raspberry Pi
 
@@ -221,7 +226,7 @@ git clone https://github.com/kotoanidev/szkola-zdalne-sterowanie.git
 cd szkola-zdalne-sterowanie/server
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-groups                     # użytkownik musi należeć do grupy dialout (dostęp do /dev/ttyUSB*)
+groups                     # użytkownik musi należeć do grupy dialout (dostęp do /dev/ttyUSB*; FT232RL z ATB to /dev/ttyUSB0)
 .venv/bin/python -m app    # start na porcie 5000, konwerter wykrywany automatycznie
 ```
 
@@ -252,7 +257,7 @@ Serwer i strona WWW działają bez sprzętu. W trybie symulacji strona ma dodatk
 | Symulator | Polecenie | Co symuluje | System |
 |---|---|---|---|
 | Model w Pythonie | `SIMULATE=1 .venv/bin/python -m app` | protokół i logikę firmware (bez kodu C) | Windows, Linux |
-| simavr | `SIMULATE=avr .venv/bin/python -m app` | **prawdziwy** `firmware.hex` na emulowanym ATmega8 1 MHz | Linux |
+| simavr | `SIMULATE=avr .venv/bin/python -m app` | **prawdziwy** `firmware.hex` na emulowanym ATmega32 1 MHz, z modelem DS18B20 na 1-Wire | Linux |
 
 Na Windows (PowerShell): `$env:SIMULATE = "1"; .venv\Scripts\python -m app`.
 
@@ -264,7 +269,7 @@ make -C sim test     # testy prawdziwego firmware w symulatorze
 make -C sim run      # sam symulator; UART na pseudoterminalu sim/build/uart
 ```
 
-`make -C sim run` pozwala podłączyć się do emulowanego UART dowolnym terminalem, np. `picocom -b 9600 sim/build/uart`, albo serwerem: `SERIAL_PORT=$PWD/sim/build/uart`. Sterowanie wirtualnym sprzętem: linie na wejściu symulatora (`btn press`, `pot 0-1023`, `ldr 0-1023`, `temp 25`, `reset`, `power`, `quit`).
+`make -C sim run` pozwala podłączyć się do emulowanego UART dowolnym terminalem, np. `picocom -b 9600 sim/build/uart`, albo serwerem: `SERIAL_PORT=$PWD/sim/build/uart`. Sterowanie wirtualnym sprzętem: linie na wejściu symulatora (`btn press`, `pot 0-1023`, `ldr 0-1023`, `temp 25`, `temp none` – czujnik odłączony, `reset`, `power`, `quit`). Firmware zbudowany dla kwarcu uruchamia się z `--freq 11059200`.
 
 ## Praca na komputerze szkolnym
 
@@ -300,11 +305,11 @@ Zasady szczegółowe (konwencje firmware, serwera i front-endu, bezpieczeństwo 
 | Etap | Weryfikacja wg instrukcji | Nasze testy dodatkowe |
 |---|---|---|
 | 1 | miganie / włączanie diody na rozkaz z kodu | przycisk, PWM 0 / 50 / 100 %, odczyt fusebitów |
-| 2 | dioda reaguje na znaki z klawiatury (`1` / `0`) | wszystkie komendy protokołu, błędne komendy, zdarzenia, reset i EEPROM |
+| 2 | dioda reaguje na znaki z klawiatury (`1` / `0`) | wszystkie komendy protokołu, błędne komendy, zdarzenia, temperatura z DS18B20, reset i EEPROM |
 | 3 | `http://[IP_MALINY]:5000/on` zapala diodę | testy pytest (symulator), odłączenie i ponowne podłączenie USB, autostart |
 | 4 | pełna demonstracja dla prowadzącego | seria przełączeń, praca ciągła, zanik zasilania, pomiary napięć i prądów |
 
-Testy automatyczne (`cd server && .venv/bin/python -m pytest`): protokół, symulator w Pythonie, API i SSE, a po `make -C sim` także testy prawdziwego firmware w simavr (komendy i błędy, PWM z korekcją gamma i płynnym przejściem, przycisk, potencjometr, tryb AUTO, alarm temperatury, stan z EEPROM po zaniku zasilania, serwer od przeglądarki do firmware). Nie zastępują one prób na sprzęcie.
+Testy automatyczne (`cd server && .venv/bin/python -m pytest`): protokół, symulator w Pythonie, API i SSE, a po `make -C sim` także testy prawdziwego firmware w simavr (komendy i błędy, PWM z korekcją gamma i płynnym przejściem, przycisk, potencjometr, tryb AUTO, DS18B20 na 1-Wire z czasami granicznymi i bez czujnika, alarm temperatury, stan z EEPROM po zaniku zasilania, serwer od przeglądarki do firmware). Nie zastępują one prób na sprzęcie.
 
 Wyniki trafiają do sprawozdań i dokumentacji technicznej wyłącznie z rzeczywistych prób.
 
@@ -331,7 +336,7 @@ Konwerter obsługuje nagłówki, akapity, listy, tabele, bloki kodu, pogrubienia
 
 | Osoba | Rola |
 |---|---|
-| **Mikołaj Milcarz** | firmware (C / ATmega8), serwer (Python / Flask / Raspberry Pi), interfejs WWW, montaż |
+| **Mikołaj Milcarz** | firmware (C / ATmega8, ATmega32A), serwer (Python / Flask / Raspberry Pi), interfejs WWW, montaż |
 | **Wiktor Selwon** | przegląd kodu, weryfikacja i testy, pomiary, dokumentacja, sprawozdania |
 
 ## Licencja
