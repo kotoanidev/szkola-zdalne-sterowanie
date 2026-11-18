@@ -2,6 +2,15 @@
 #include <avr/io.h>
 #include "adc.h"
 
+// Zegar ADC 50–200 kHz: preskaler 8 przy 1 MHz, 64 przy kwarcu 11,0592 MHz
+#if F_CPU <= 1600000UL
+#define ADC_PRESCALER (_BV(ADPS1) | _BV(ADPS0))
+#elif F_CPU <= 12800000UL
+#define ADC_PRESCALER (_BV(ADPS2) | _BV(ADPS1))
+#else
+#error "Nieobsługiwane F_CPU (adc.c)"
+#endif
+
 static uint16_t sums[ADC_CHANNELS];
 static uint16_t acc;
 static uint8_t channel;
@@ -16,9 +25,9 @@ static void start(void)
 
 void adc_init(void)
 {
-    // Odniesienie AVCC, preskaler 8: 1 MHz / 8 = 125 kHz (zakres 50–200 kHz)
+    // Odniesienie AVCC (AREF tylko z kondensatorem)
     ADMUX = _BV(REFS0);
-    ADCSRA = _BV(ADEN) | _BV(ADPS1) | _BV(ADPS0);
+    ADCSRA = _BV(ADEN) | ADC_PRESCALER;
     skip = 1;
     start();
 }

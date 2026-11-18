@@ -50,7 +50,7 @@ def fields_to_state(fields: dict[str, str]) -> dict:
             elif key in ("pwm", "pot", "ldr", "tlim"):
                 state[key] = int(value)
             elif key == "temp":
-                state[key] = float(value)
+                state[key] = None if value == "ERR" else float(value)
             elif key == "up":
                 state["uptime_s"] = int(value)
             elif key == "mode" and value in MODES:

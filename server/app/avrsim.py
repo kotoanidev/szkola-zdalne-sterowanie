@@ -26,11 +26,11 @@ class AvrSimError(Exception):
 
 class AvrSim:
     def __init__(self, binary: Path = DEFAULT_BINARY, hex_file: Path = DEFAULT_HEX,
-                 speed: float = 1.0, eeprom: Path | None = None, sensor: str = "lm35") -> None:
+                 speed: float = 1.0, eeprom: Path | None = None) -> None:
         for path, hint in ((binary, "make -C sim"), (hex_file, "make -C firmware")):
             if not Path(path).exists():
                 raise AvrSimError(f"brak {path} – uruchom: {hint}")
-        args = [str(binary), "--speed", str(speed), "--sensor", sensor]
+        args = [str(binary), "--speed", str(speed)]
         if eeprom is not None:
             args += ["--eeprom", str(eeprom)]
         args.append(str(hex_file))
@@ -98,7 +98,7 @@ class AvrSim:
             self.ldr = max(0, min(1023, int(ldr)))
             self._send(f"ldr {self.ldr}")
         if temp_c is not None:
-            self.temp_c = max(-20.0, min(150.0, float(temp_c)))
+            self.temp_c = max(-55.0, min(125.0, float(temp_c)))
             self._send(f"temp {self.temp_c}")
 
     def press_button(self, long: bool = False) -> None:

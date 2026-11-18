@@ -118,7 +118,7 @@ def test_button(sim):
 def test_eeprom_restore_after_reset(sim):
     send(sim, "ON\nPWM 70\nTLIM 40\n")
     sim.reset("WDT")
-    assert send(sim, "") == ["EVT BOOT reset=WDT ver=0.9.0-sim"]
+    assert send(sim, "") == ["EVT BOOT reset=WDT ver=0.10.0-sim"]
     assert (sim.on, sim.pwm, sim.tlim, sim.mode) == (True, 70, 40, "MANUAL")
 
 

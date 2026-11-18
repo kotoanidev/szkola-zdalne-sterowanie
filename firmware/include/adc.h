@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define ADC_CHANNELS 3
+#define ADC_CHANNELS 2
 #define ADC_SAMPLES  16
 
 void adc_init(void);

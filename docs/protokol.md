@@ -1,6 +1,6 @@
 # Protokół UART i API HTTP
 
-> **Status:** wersja 0.9 – zaimplementowana w firmware 0.9.0 i serwerze, sprawdzona w symulatorze simavr; czeka na test na sprzęcie.
+> **Status:** wersja 0.10 – zaimplementowana w firmware 0.10.0 (ATmega32A na płytce ATB 1.05) i serwerze, sprawdzona w symulatorze simavr; czeka na test na sprzęcie. Zmiana względem 0.9: temperatura z czujnika DS18B20 i wartość `temp=ERR` przy braku odczytu.
 > Ten plik jest jedynym źródłem prawdy: każda zmiana oznacza aktualizację firmware, serwera i testów w tym samym commicie.
 
 ## 1. Warstwa fizyczna UART
@@ -9,7 +9,8 @@
 |---|---|
 | Prędkość | 9600 bps |
 | Format | 8N1, bez kontroli przepływu |
-| Konfiguracja ATmega8 | U2X = 1, UBRR = 12 (F_CPU 1 MHz → 9615 bps, błąd +0,16 %) |
+| Konfiguracja ATmega32A | U2X = 1; UBRR = 12 przy F_CPU 1 MHz (9615 bps, błąd +0,16 %) albo UBRR = 143 przy kwarcu 11,0592 MHz (bez błędu) |
+| Połączenie | FT232RL wbudowany w płytkę ATB, zworki JP6 (TX) i JP7 (RX) → PD1 / PD0 |
 | Kodowanie | ASCII |
 | Koniec linii | do MCU: `\n` (znak `\r` jest ignorowany); z MCU: `\r\n` (czytelne w każdym terminalu) |
 
@@ -29,7 +30,7 @@ Komenda to jedna linia o długości do 32 znaków, wielkość liter nie ma znacz
 | Komenda | Opis | Odpowiedź (przykład) |
 |---|---|---|
 | `PING` | test łącza | `PONG` |
-| `VER` | wersja firmware | `VER 0.9.0` |
+| `VER` | wersja firmware | `VER 0.10.0` |
 | `ON` / `OFF` / `TOGGLE` | stan wyjścia | `OK on=1` |
 | `PWM <0-100>` | jasność w %; w trybie AUTO przełącza na MANUAL | `OK pwm=60` lub `OK pwm=60 mode=MANUAL` |
 | `MODE MANUAL` / `MODE AUTO` | tryb (AUTO = jasność wg fotorezystora) | `OK mode=AUTO` |
@@ -47,8 +48,8 @@ Odpowiedzi `OK`, `STATE` i zdarzenia `EVT` mają postać `klucz=wartość` oddzi
 | `on` | wyjście włączone (1) / wyłączone (0) |
 | `pwm` | jasność 0–100 %; w trybie AUTO wyliczona z fotorezystora |
 | `mode` | `MANUAL` albo `AUTO` |
-| `pot`, `ldr` | surowy odczyt ADC0 i ADC1 (0–1023, średnia z 16 próbek) |
-| `temp` | temperatura w °C z jedną cyfrą po przecinku (typ czujnika w `firmware/include/config.h`) |
+| `pot`, `ldr` | surowy odczyt ADC0 (PA0) i ADC1 (PA1) (0–1023, średnia z 16 próbek) |
+| `temp` | temperatura w °C z jedną cyfrą po przecinku z czujnika DS18B20 (pomiar co 1 s, rozdzielczość 0,0625 °C); `ERR`, gdy czujnik nie odpowiada, odczyt ma zły CRC albo od startu nie minęła jeszcze ok. 1 s. Bez odczytu alarm zostaje w dotychczasowym stanie. Serwer zamienia `ERR` na `null` |
 | `alarm` | 1 – temperatura ≥ `tlim`; gaśnie po spadku o 2 °C poniżej progu |
 | `tlim` | próg alarmu w °C |
 | `up` | czas pracy od resetu w sekundach |
@@ -61,7 +62,7 @@ Mikrokontroler sam wysyła linię zaczynającą się od `EVT`, gdy stan zmieni s
 
 | Zdarzenie | Kiedy |
 |---|---|
-| `EVT BOOT reset=POR\|EXT\|WDT\|BOR ver=0.9.0` | start po resecie (z przyczyną i wersją firmware) |
+| `EVT BOOT reset=POR\|EXT\|WDT\|BOR ver=0.10.0` | start po resecie (z przyczyną i wersją firmware) |
 | `EVT BTN on=0` | krótkie naciśnięcie przycisku – przełączenie wyjścia |
 | `EVT BTN mode=AUTO` | przytrzymanie przycisku ≥ 1 s – zmiana trybu |
 | `EVT POT pwm=40` | zmiana jasności potencjometrem (o ≥ 2 %); w trybie AUTO dodatkowo ` mode=MANUAL` |
@@ -108,7 +109,7 @@ Przykładowa odpowiedź `GET /api/health`:
   "simulated": false,
   "simulator": null,
   "port": "/dev/ttyUSB0",
-  "firmware": "0.9.0",
+  "firmware": "0.10.0",
   "server_uptime_s": 3600
 }
 ```

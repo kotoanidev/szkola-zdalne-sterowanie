@@ -6,6 +6,15 @@
 
 #define PWM_TOP 1023
 
+#if LED_ACTIVE_LOW
+// Tryb odwracający: dioda świeci, gdy wyjście jest w stanie niskim
+#define PWM_COM   (_BV(COM1A1) | _BV(COM1A0))
+#define led_off() (LED_PORT |= _BV(LED_BIT))
+#else
+#define PWM_COM   _BV(COM1A1)
+#define led_off() (LED_PORT &= ~_BV(LED_BIT))
+#endif
+
 static uint16_t level;
 static uint16_t target;
 
@@ -16,19 +25,19 @@ static void apply(void)
 
     if (duty == 0) {
         // OCR1A = 0 daje w fast PWM krótkie impulsy, więc odłączamy wyjście
-        TCCR1A &= ~_BV(COM1A1);
-        LED_PORT &= ~_BV(LED_BIT);
+        TCCR1A &= ~PWM_COM;
+        led_off();
     } else {
         OCR1A = duty;
-        TCCR1A |= _BV(COM1A1);
+        TCCR1A |= PWM_COM;
     }
 }
 
 void pwm_init(void)
 {
-    LED_PORT &= ~_BV(LED_BIT);
+    led_off();
     LED_DDR |= _BV(LED_BIT);
-    // Tryb 7 (fast PWM 10-bit), bez preskalera: 1 MHz / 1024 ≈ 977 Hz
+    // Tryb 7 (fast PWM 10-bit), bez preskalera: F_CPU / 1024, przy 1 MHz ok. 977 Hz
     TCCR1A = _BV(WGM11) | _BV(WGM10);
     TCCR1B = _BV(WGM12) | _BV(CS10);
     apply();

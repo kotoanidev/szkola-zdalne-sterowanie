@@ -55,7 +55,7 @@ def test_post_state_validation(client):
 def test_health(client):
     r = client.get("/api/health")
     assert r.json["ok"] and r.json["connected"] and r.json["simulated"]
-    assert r.json["firmware"].startswith("0.9.0")
+    assert r.json["firmware"].startswith("0.10.0")
 
 
 def test_local_button_reaches_state(client, device):
@@ -104,7 +104,7 @@ def test_offline_returns_503(offline_client):
 def test_stale_and_broken_lines_are_skipped(device):
     dev, _ = device
     # Urwana linia z otwarcia portu w trakcie nadawania i spóźnione PONG
-    dev._responses.put(parse_line("OT reset=POR ver=0.9.0"))
+    dev._responses.put(parse_line("OT reset=POR ver=0.10.0"))
     original_write = dev.transport.write_line
 
     def write_with_noise(line):
@@ -113,7 +113,7 @@ def test_stale_and_broken_lines_are_skipped(device):
 
     dev.transport.write_line = write_with_noise
     try:
-        assert dev.command("VER").name.startswith("0.9.0")
+        assert dev.command("VER").name.startswith("0.10.0")
         assert dev.command("ON").fields == {"on": "1"}
     finally:
         dev.transport.write_line = original_write

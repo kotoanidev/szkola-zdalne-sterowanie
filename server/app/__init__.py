@@ -1,4 +1,4 @@
-"""Serwer Flask: mostek między przeglądarką a ATmega8 (docs/protokol.md, rozdz. 5)."""
+"""Serwer Flask: mostek między przeglądarką a ATmega32A (docs/protokol.md, rozdz. 5)."""
 
 from __future__ import annotations
 

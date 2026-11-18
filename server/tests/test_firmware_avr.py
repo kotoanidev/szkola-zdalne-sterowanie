@@ -22,7 +22,7 @@ pytestmark = pytest.mark.skipif(
 
 
 class Link:
-    """Terminal szeregowy podłączony do UART emulowanego ATmega8."""
+    """Terminal szeregowy podłączony do UART emulowanego ATmega32A."""
 
     def __init__(self, port: str) -> None:
         self.port = serial.Serial(port, 9600, timeout=0.05)
@@ -87,14 +87,14 @@ def avr(tmp_path):
 @pytest.fixture
 def link(avr):
     link = Link(avr.pty)
-    assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=POR ver=0.9.0"
+    assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=POR ver=0.10.0"
     yield link
     link.port.close()
 
 
 def test_commands(link):
     assert link.cmd("PING") == "PONG"
-    assert link.cmd("ver") == "VER 0.9.0"
+    assert link.cmd("ver") == "VER 0.10.0"
     assert link.cmd("ON") == "OK on=1"
     assert link.cmd("TOGGLE") == "OK on=0"
     assert link.cmd(" pwm 60 ") == "OK pwm=60"
@@ -120,9 +120,20 @@ def test_errors(link):
 
 
 def test_get_state(link):
+    # Pierwszy pomiar DS18B20 jest gotowy ok. 0,8 s po starcie
+    assert wait_for(lambda: "temp=ERR" not in link.cmd("GET"))
     line = link.cmd("GET")
     assert re.fullmatch(r"STATE on=0 pwm=50 mode=MANUAL pot=512 ldr=500 temp=22\.0 "
                         r"alarm=0 tlim=50 up=\d+", line), line
+
+
+def test_ds18b20_negative_and_missing(link, avr):
+    avr.set_inputs(temp_c=-10.5)
+    assert wait_for(lambda: "temp=-10.5 " in link.cmd("GET"), 3)
+    avr._send("temp none")
+    assert wait_for(lambda: "temp=ERR " in link.cmd("GET"), 3)
+    avr.set_inputs(temp_c=23.5)
+    assert wait_for(lambda: "temp=23.5 " in link.cmd("GET"), 3)
 
 
 def test_pwm_fade_and_gamma(link, avr):
@@ -161,9 +172,10 @@ def test_auto_mode_follows_light(link, avr):
 def test_temperature_alarm(link, avr):
     link.cmd("TLIM 30")
     avr.set_inputs(temp_c=35)
-    assert re.fullmatch(r"EVT TEMP alarm=1 temp=3\d\.\d", link.wait_event("EVT TEMP"))
+    # DS18B20 mierzy co 1 s, alarm sprawdzany co 0,5 s
+    assert link.wait_event("EVT TEMP", 3) == "EVT TEMP alarm=1 temp=35.0"
     avr.set_inputs(temp_c=20)
-    assert re.fullmatch(r"EVT TEMP alarm=0 temp=\d+\.\d", link.wait_event("EVT TEMP"))
+    assert link.wait_event("EVT TEMP", 3) == "EVT TEMP alarm=0 temp=20.0"
 
 
 def test_state_survives_power_loss(link, avr):
@@ -172,14 +184,14 @@ def test_state_survives_power_loss(link, avr):
     link.cmd("TLIM 40")
     time.sleep(2.6)  # zapis do EEPROM 2 s po ostatniej zmianie
     avr.reset("POR")
-    assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=POR ver=0.9.0"
+    assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=POR ver=0.10.0"
     state = link.cmd("GET")
     assert "on=1 pwm=70" in state and "tlim=40" in state
 
 
 def test_external_reset_reason(link, avr):
     avr.reset()
-    assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=EXT ver=0.9.0"
+    assert link.wait_event("EVT BOOT", 2) == "EVT BOOT reset=EXT ver=0.10.0"
 
 
 def test_server_end_to_end(avr):
@@ -193,6 +205,6 @@ def test_server_end_to_end(avr):
         assert wait_for(lambda: avr.duty == 1.0)
         avr.press_button()
         assert wait_for(lambda: dev.snapshot()["on"] is False)
-        assert client.get("/api/health").json["firmware"] == "0.9.0"
+        assert client.get("/api/health").json["firmware"] == "0.10.0"
     finally:
         dev.stop()

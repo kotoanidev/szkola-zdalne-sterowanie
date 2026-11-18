@@ -13,7 +13,7 @@
       <span class="brand-dot" aria-hidden="true"></span>
       <div>
         <h1>Oświetlenie LED</h1>
-        <p class="subtitle">ATmega8 · Raspberry Pi · sieć LAN</p>
+        <p class="subtitle">ATmega32A (ATB 1.05) · Raspberry Pi · sieć LAN</p>
       </div>
     </div>
     <div class="status-group">
@@ -95,24 +95,24 @@
         <h2 id="h-board">Wirtualna płytka</h2>
         <p class="muted small">Tryb symulacji: tu zmieniasz to, co na prawdziwej płytce robią przycisk i czujniki.</p>
         <div class="board-leds">
-          <span class="board-led"><span id="sim-led" class="led led-main"></span>PB1 – dioda</span>
-          <span class="board-led"><span id="sim-status" class="led led-status"></span>PD7 – status</span>
+          <span class="board-led"><span id="sim-led" class="led led-main"></span>PD5 – dioda LED8</span>
+          <span class="board-led"><span id="sim-status" class="led led-status"></span>PC0 – status LED1</span>
           <span class="board-led muted" id="sim-duty" hidden></span>
         </div>
         <label class="field" for="sim-pot">
-          <span class="field-head"><span>Potencjometr (ADC0)</span><output id="sim-pot-out">–</output></span>
+          <span class="field-head"><span>Potencjometr (PA0)</span><output id="sim-pot-out">–</output></span>
           <input id="sim-pot" type="range" min="0" max="1023" value="512">
         </label>
         <label class="field" for="sim-ldr">
-          <span class="field-head"><span>Światło na fotorezystorze (ADC1)</span><output id="sim-ldr-out">–</output></span>
+          <span class="field-head"><span>Światło na fotorezystorze (PA1)</span><output id="sim-ldr-out">–</output></span>
           <input id="sim-ldr" type="range" min="0" max="1023" value="500">
         </label>
         <label class="field" for="sim-temp">
-          <span class="field-head"><span>Temperatura czujnika (ADC2)</span><output id="sim-temp-out">–</output></span>
+          <span class="field-head"><span>Temperatura czujnika DS18B20</span><output id="sim-temp-out">–</output></span>
           <input id="sim-temp" type="range" min="0" max="80" step="0.5" value="22">
         </label>
         <div class="buttons buttons-wrap">
-          <button class="btn btn-small" type="button" data-sim-button="short">Przycisk PD2</button>
+          <button class="btn btn-small" type="button" data-sim-button="short">Przycisk K1 (PD2)</button>
           <button class="btn btn-small" type="button" data-sim-button="long">Przytrzymaj 1 s (tryb)</button>
           <button class="btn btn-small btn-ghost" type="button" id="sim-reset">Reset MCU</button>
           <button class="btn btn-small btn-ghost" type="button" id="sim-power">Zanik zasilania</button>

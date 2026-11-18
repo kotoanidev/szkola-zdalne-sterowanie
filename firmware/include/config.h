@@ -2,17 +2,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define FW_VERSION          "0.9.0"
-
-// Czujnik temperatury na ADC2 – typ do ustalenia (docs/PLAN_PROJEKTU.md, sekcja 10)
-#define TEMP_SENSOR_LM35    1   // 10 mV/°C
-#define TEMP_SENSOR_NTC     2   // NTC 10 kΩ (B = 3950) do VCC, 10 kΩ do GND
-#ifndef TEMP_SENSOR
-#define TEMP_SENSOR         TEMP_SENSOR_LM35
-#endif
-
-// Napięcie odniesienia ADC (AVCC) w mV – do korekty po pomiarze multimetrem
-#define ADC_VREF_MV         5000
+#define FW_VERSION          "0.10.0"
 
 // Domyślny próg alarmu temperatury [°C] i histereza wyłączenia [0,1 °C]
 #define TEMP_LIMIT_DEFAULT  50

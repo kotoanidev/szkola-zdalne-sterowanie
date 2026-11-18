@@ -4,7 +4,7 @@
 #include "config.h"
 #include "pinout.h"
 #include "adc.h"
-#include "sensors.h"
+#include "ds18b20.h"
 #include "state.h"
 #include "timer.h"
 #include "uart.h"
@@ -31,7 +31,10 @@ static void kv_mode(void)
 static void kv_temp(int16_t temp)
 {
     uart_puts_P(PSTR(" temp="));
-    uart_put_tenths(temp);
+    if (temp == TEMP_NONE)
+        uart_puts_P(PSTR("ERR"));
+    else
+        uart_put_tenths(temp);
 }
 
 static void reply_P(PGM_P s)
@@ -55,7 +58,7 @@ static void reply_state(void)
     kv_mode();
     kv(PSTR(" pot="), adc_value(ADC_CH_POT));
     kv(PSTR(" ldr="), adc_value(ADC_CH_LDR));
-    kv_temp(sensors_temp_tenths());
+    kv_temp(ds18b20_tenths());
     kv(PSTR(" alarm="), state.alarm);
     kv(PSTR(" tlim="), state.tlim);
     kv(PSTR(" up="), timer_ms() / 1000);

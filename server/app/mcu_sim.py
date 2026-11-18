@@ -1,6 +1,6 @@
-"""Model ATmega8 na poziomie protokołu – zachowuje się jak firmware, ale bez sprzętu.
+"""Model ATmega32A (płytka ATB 1.05) na poziomie protokołu – zachowuje się jak firmware, ale bez sprzętu.
 
-Stałe odpowiadają firmware/include/config.h (czujnik LM35, VREF 5 V).
+Stałe odpowiadają firmware/include/config.h; temperatura jak z DS18B20 (rozdzielczość 1/16 °C).
 """
 
 from __future__ import annotations
@@ -12,8 +12,7 @@ from typing import Callable
 
 from .protocol import LINE_MAX, TLIM_MAX
 
-FW_VERSION = "0.9.0-sim"
-ADC_VREF_MV = 5000
+FW_VERSION = "0.10.0-sim"
 POT_HYST = 2
 AUTO_HYST = 3
 LDR_DARK, LDR_BRIGHT = 200, 800
@@ -81,7 +80,7 @@ class McuSim:
             if ldr is not None:
                 self.ldr = max(0, min(1023, int(ldr)))
             if temp_c is not None:
-                self.temp_c = max(-20.0, min(150.0, float(temp_c)))
+                self.temp_c = max(-55.0, min(125.0, float(temp_c)))
 
     @property
     def brightness(self) -> int:
@@ -200,10 +199,9 @@ class McuSim:
             self.eeprom["pwm"] = self.pwm
 
     def _temp_reading(self) -> float:
-        # Kwantyzacja jak w ADC (suma 16 próbek, LM35 10 mV/°C)
-        raw_sum = round(self.temp_c * 10 * 16384 / ADC_VREF_MV)
-        raw_sum = max(0, min(16368, raw_sum))
-        return ((raw_sum * ADC_VREF_MV + 8192) >> 14) / 10
+        # DS18B20 podaje 1/16 °C, firmware zaokrągla do 0,1 °C (dzielenie jak w C)
+        raw = round(self.temp_c * 16)
+        return int((raw * 10 + (8 if raw >= 0 else -8)) / 16) / 10
 
     def tick(self) -> None:
         """Okresowe zadania firmware: potencjometr, tryb AUTO, alarm temperatury."""

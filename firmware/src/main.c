@@ -1,4 +1,4 @@
-// Sterownik oświetlenia LED: ATmega8 @ 1 MHz, sterowanie przez UART, przycisk i potencjometr
+// Sterownik oświetlenia LED: ATmega32A na płytce ATB 1.05, sterowanie przez UART, przycisk i potencjometr
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -7,6 +7,7 @@
 #include "pinout.h"
 #include "adc.h"
 #include "button.h"
+#include "ds18b20.h"
 #include "protocol.h"
 #include "pwm.h"
 #include "sensors.h"
@@ -56,6 +57,9 @@ static void status_tick(uint16_t now)
         activity_ms--;
         lit = 1;
     }
+#if LED_ACTIVE_LOW
+    lit = !lit;
+#endif
     if (lit)
         STATUS_PORT |= _BV(STATUS_BIT);
     else
@@ -96,9 +100,12 @@ static void auto_check(void)
 
 static void temp_check(void)
 {
-    int16_t t = sensors_temp_tenths();
+    int16_t t = ds18b20_tenths();
     int16_t limit = (int16_t)state.tlim * 10;
 
+    // Bez odczytu alarm zostaje w dotychczasowym stanie
+    if (t == TEMP_NONE)
+        return;
     if (!state.alarm && t >= limit) {
         state.alarm = 1;
         protocol_event_temp(t);
@@ -122,6 +129,7 @@ static void tick(uint16_t now)
     pwm_tick();
     state_tick();
     status_tick(now);
+    ds18b20_tick();
 
     if (!adc_ready())
         return;

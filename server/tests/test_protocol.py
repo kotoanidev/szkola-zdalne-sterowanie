@@ -17,7 +17,7 @@ def test_parse_event_with_name():
 
 def test_parse_err_and_ver():
     assert parse_line("ERR ARG").name == "ARG"
-    assert parse_line("VER 0.9.0").name == "0.9.0"
+    assert parse_line("VER 0.10.0").name == "0.10.0"
     assert parse_line("PONG").kind == "PONG"
     assert parse_line("   ").kind == ""
 
@@ -32,3 +32,4 @@ def test_state_conversion():
 
 def test_state_conversion_skips_garbage():
     assert fields_to_state({"pwm": "x", "mode": "FOO", "temp": "2.5"}) == {"temp": 2.5}
+    assert fields_to_state({"temp": "ERR"}) == {"temp": None}
